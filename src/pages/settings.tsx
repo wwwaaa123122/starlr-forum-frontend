@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Camera, KeyRound, Laptop, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Upload } from 'lucide-react';
-import { api, ApiClientError } from '@/lib/api';
+import { api, ApiClientError, getStoredRefreshToken } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { timeAgo } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,7 +39,27 @@ export function SettingsPage() {
 
   const { data: sessions, refetch: refetchSessions } = useQuery({
     queryKey: ['my-sessions'],
-    queryFn: () => api<SessionItem>('/api/me/sessions'),
+    // 通过本机刷新令牌识别当前浏览器所在会话（旧 access token 无 sid 声明时也能正确标记）
+    queryFn: async () => {
+      const data = await api<SessionItem>('/api/me/sessions');
+      const rt = getStoredRefreshToken();
+      let currentChain: string | null = null;
+      if (rt) {
+        try {
+          const identified = await api<{ chainRoot: string }>('/api/me/sessions/identify', {
+            method: 'POST',
+            body: { refreshToken: rt },
+          });
+          currentChain = identified.chainRoot;
+        } catch {
+          /* 识别失败则按服务端 sid 标记 */
+        }
+      }
+      const list = currentChain
+        ? data.sessions.map((sess) => ({ ...sess, current: sess.chainRoot === currentChain }))
+        : data.sessions;
+      return { ...data, sessions: list };
+    },
     enabled: Boolean(user),
   });
 

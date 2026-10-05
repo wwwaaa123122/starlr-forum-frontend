@@ -1148,7 +1148,7 @@ export function AdminPage() {
       </h1>
 
       <Tabs defaultValue="overview">
-        <TabsList className="mb-4 flex-wrap">
+        <TabsList className="mb-4 w-full max-w-full flex-nowrap justify-start overflow-x-auto [&>[role=tab]]:flex-none">
           <TabsTrigger value="overview">概览</TabsTrigger>
           <TabsTrigger value="users">用户</TabsTrigger>
           <TabsTrigger value="posts">帖子</TabsTrigger>

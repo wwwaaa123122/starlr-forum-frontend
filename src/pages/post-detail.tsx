@@ -137,9 +137,11 @@ function ReplyItem({
   reply,
   postId,
   onReply,
+  replyPage,
 }: {
   reply: Reply;
   postId: string;
+  replyPage: number;
   onReply: (reply: Reply) => void;
 }) {
   const { user, isModerator } = useAuth();
@@ -153,15 +155,24 @@ function ReplyItem({
     void queryClient.invalidateQueries({ queryKey: ['post', postId] });
   };
 
-  const likeMutation = useMutation({
-    mutationFn: () => api(`/api/replies/${reply.id}/like`, { method: 'POST' }),
-    onSuccess: invalidate,
+  // 单一开关式 mutation：以 reply.liked 为准，成功后直接应用服务端权威计数
+  const replyLikeMutation = useMutation({
+    mutationFn: () =>
+      api<{ liked: boolean; likeCount: number }>(`/api/replies/${reply.id}/like`, {
+        method: reply.liked ? 'DELETE' : 'POST',
+      }),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['replies', postId, replyPage], (old: { replies: Reply[] } | undefined) =>
+        old
+          ? {
+              ...old,
+              replies: old.replies.map((r) => (r.id === reply.id ? { ...r, liked: res.liked, likeCount: res.likeCount } : r)),
+            }
+          : old,
+      );
+      invalidate();
+    },
     onError: (e) => toast.error(e instanceof ApiClientError ? e.message : '操作失败'),
-  });
-
-  const unlikeMutation = useMutation({
-    mutationFn: () => api(`/api/replies/${reply.id}/like`, { method: 'DELETE' }),
-    onSuccess: invalidate,
   });
 
   const saveEdit = async () => {
@@ -232,9 +243,9 @@ function ReplyItem({
               variant="ghost"
               size="sm"
               className="h-7 gap-1 px-2"
-              onClick={() => (reply.likeCount > 0 ? unlikeMutation.mutate() : likeMutation.mutate())}
+              onClick={() => replyLikeMutation.mutate()}
             >
-              <Heart className={`size-3.5 ${reply.likeCount > 0 ? 'fill-current text-rose-500' : ''}`} />
+              <Heart className={`size-3.5 ${reply.liked ? 'fill-current text-rose-500' : ''}`} />
               {formatNumber(reply.likeCount)}
             </Button>
             {user && (
@@ -319,8 +330,14 @@ export function PostDetailPage() {
   };
 
   const likeMutation = useMutation({
-    mutationFn: () => api(`/api/posts/${id}/like`, { method: post?.liked ? 'DELETE' : 'POST' }),
-    onSuccess: invalidatePost,
+    mutationFn: () => api<{ liked: boolean; likeCount: number }>(`/api/posts/${id}/like`, { method: post?.liked ? 'DELETE' : 'POST' }),
+    onSuccess: (res) => {
+      // 以服务端返回的权威值更新缓存，避免连点/乱序响应造成计数虚高
+      queryClient.setQueryData(['post', id], (old: { post: PostDetail } | undefined) =>
+        old ? { ...old, post: { ...old.post, liked: res.liked, likeCount: res.likeCount } } : old,
+      );
+      invalidatePost();
+    },
     onError: (e) => toast.error(e instanceof ApiClientError ? e.message : '操作失败'),
   });
 
@@ -470,6 +487,11 @@ export function PostDetailPage() {
         <Separator />
 
         <div className="p-5">
+          {post.editedAt && (
+            <p className="text-muted-foreground mb-2 inline-flex items-center gap-1 text-xs" title={timeAgo(post.editedAt)}>
+              <Pencil className="size-3" /> 已编辑
+            </p>
+          )}
           <MarkdownView content={post.content} />
         </div>
 
@@ -481,7 +503,7 @@ export function PostDetailPage() {
             variant={post.liked ? 'default' : 'outline'}
             size="sm"
             onClick={() => likeMutation.mutate()}
-            disabled={!user}
+            disabled={!user || likeMutation.isPending}
           >
             <Heart className={`size-4 ${post.liked ? 'fill-current' : ''}`} /> 点赞 {formatNumber(post.likeCount)}
           </Button>
@@ -489,7 +511,7 @@ export function PostDetailPage() {
             variant={post.favorited ? 'default' : 'outline'}
             size="sm"
             onClick={() => favoriteMutation.mutate()}
-            disabled={!user}
+            disabled={!user || favoriteMutation.isPending}
           >
             <Star className={`size-4 ${post.favorited ? 'fill-current' : ''}`} /> 收藏 {formatNumber(post.favoriteCount)}
           </Button>
@@ -507,10 +529,8 @@ export function PostDetailPage() {
             <Link2 className="size-4" /> 复制链接
           </Button>
 
-          <div className="flex-1" />
-
           {user && post.isAuthor && (
-            <>
+            <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
               <Button variant="outline" size="sm" onClick={() => navigate(`/edit/${post.id}`)}>
                 <Pencil className="size-4" /> 编辑
               </Button>
@@ -531,7 +551,7 @@ export function PostDetailPage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </>
+            </div>
           )}
 
           {user && !post.isAuthor && (
@@ -646,6 +666,7 @@ export function PostDetailPage() {
                 key={reply.id}
                 reply={reply}
                 postId={id}
+        replyPage={replyPage}
                 onReply={(r) => {
                   setReplyTo(r);
                   document.querySelector('textarea')?.focus();

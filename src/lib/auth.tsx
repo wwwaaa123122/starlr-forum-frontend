@@ -25,6 +25,8 @@ export interface CurrentUser {
   avatarUrl: string | null;
   bio: string;
   role: 'user' | 'moderator' | 'admin';
+  emailVerified?: boolean;
+  accountStatus?: 'active' | 'unverified' | 'banned';
   postCount: number;
   replyCount: number;
   createdAt: string;

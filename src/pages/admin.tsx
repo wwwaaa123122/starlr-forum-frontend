@@ -184,7 +184,15 @@ function UsersTab() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {u.status === 'banned' ? <Badge variant="destructive">已封禁</Badge> : <Badge variant="success">正常</Badge>}
+                    {u.status === 'banned' ? (
+                      <Badge variant="destructive">已封禁</Badge>
+                    ) : u.emailVerified === 0 || u.emailVerified === false ? (
+                      <Badge variant="outline" className="border-amber-500/60 text-amber-600 dark:text-amber-400">
+                        未验证
+                      </Badge>
+                    ) : (
+                      <Badge variant="success">正常</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-xs">
                     {u.postCount} / {u.replyCount}
@@ -202,6 +210,15 @@ function UsersTab() {
                         ) : (
                           <Button variant="outline" size="sm" onClick={() => mutation.mutate({ path: `users/${u.id}/unban` })}>
                             <CheckCircle className="size-3.5" /> 解封
+                          </Button>
+                        )}
+                        {u.status !== 'banned' && u.emailVerified === 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => mutation.mutate({ path: `users/${u.id}/verify` })}
+                          >
+                            <CheckCircle className="size-3.5" /> 激活
                           </Button>
                         )}
                         <Button

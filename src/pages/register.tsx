@@ -44,7 +44,7 @@ export function RegisterPage() {
         password,
         turnstileToken: turnstileToken || undefined,
       });
-      toast.success('注册成功，欢迎加入 Starlr Forum！');
+      toast.success('注册成功！请到邮箱点击激活链接完成验证');
       navigate('/');
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -88,7 +88,7 @@ export function RegisterPage() {
                 id="nickname"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="展示昵称，可随时修改（默认使用用户名）"
+                placeholder="昵称"
                 maxLength={24}
                 autoComplete="nickname"
               />

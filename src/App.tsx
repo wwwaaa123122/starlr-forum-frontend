@@ -14,11 +14,13 @@ import { SettingsPage } from '@/pages/settings';
 import { SearchPage } from '@/pages/search';
 import { AdminPage } from '@/pages/admin';
 import { NotFoundPage } from '@/pages/not-found';
+import { UnverifiedBanner, VerifyEmailPage } from '@/pages/verify-email';
 
 export default function App() {
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
+      <UnverifiedBanner />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -35,6 +37,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />

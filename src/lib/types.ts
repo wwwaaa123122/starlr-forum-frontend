@@ -44,6 +44,7 @@ export interface PostSummary {
 export interface PostDetail extends PostSummary {
   content: string;
   isDeleted: boolean;
+  editedAt: string | null;
   liked: boolean;
   favorited: boolean;
   isAuthor: boolean;
@@ -62,6 +63,8 @@ export interface Reply {
   likeCount: number;
   createdAt: string;
   updatedAt: string;
+  editedAt?: string | null;
+  liked?: number | boolean;
   authorId: string;
   authorName: string;
   authorAvatar: string | null;
@@ -107,6 +110,7 @@ export interface AdminUser {
   replyCount: number;
   createdAt: string;
   lastLoginAt: string | null;
+  emailVerified?: number | boolean;
 }
 
 export interface AdminPost {

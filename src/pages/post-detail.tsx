@@ -239,30 +239,30 @@ function ReplyItem({
             <MarkdownView content={reply.content} className="mt-1.5 text-sm" />
           )}
 
-          <div className="text-muted-foreground mt-2 flex items-center gap-1 text-xs">
+          <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-1 text-xs">
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 gap-1 px-2"
+              className="h-7 shrink-0 gap-1 px-2"
               onClick={() => replyLikeMutation.mutate()}
             >
               <Heart className={`size-3.5 ${reply.liked ? 'fill-current text-rose-500' : ''}`} />
               {formatNumber(reply.likeCount)}
             </Button>
             {user && (
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2" onClick={() => onReply(reply)}>
+              <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2" onClick={() => onReply(reply)}>
                 <MessageSquare className="size-3.5" /> 回复
               </Button>
             )}
             {canEdit && (
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2" onClick={() => setEditing(true)}>
+              <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2" onClick={() => setEditing(true)}>
                 <Pencil className="size-3.5" /> 编辑
               </Button>
             )}
             {user && (user.id === reply.authorId || isModerator) && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 px-2">
+                  <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2">
                     <Trash2 className="size-3.5" /> 删除
                   </Button>
                 </AlertDialogTrigger>
@@ -279,7 +279,7 @@ function ReplyItem({
               </AlertDialog>
             )}
             {user && user.id !== reply.authorId && (
-              <Button variant="ghost" size="sm" className="h-7 gap-1 px-2" onClick={() => setReportOpen(true)}>
+              <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2" onClick={() => setReportOpen(true)}>
                 <Flag className="size-3.5" /> 举报
               </Button>
             )}
@@ -531,7 +531,7 @@ export function PostDetailPage() {
           </Button>
 
           {user && post.isAuthor && (
-            <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+            <div className="flex shrink-0 basis-full items-center justify-end gap-2 sm:ml-auto sm:basis-auto sm:justify-start">
               <Button variant="outline" size="sm" onClick={() => navigate(`/edit/${post.id}`)}>
                 <Pencil className="size-4" /> 编辑
               </Button>

@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bell,
   Compass,
   Home,
-  Monitor,
   LogOut,
   Menu,
   Moon,
@@ -54,14 +53,9 @@ function ThemeToggle() {
       title={`主题：${THEME_LABEL[theme ?? 'system']}（点击切换 浅色→深色→跟随系统）`}
       onClick={next}
     >
-      {theme === 'system' ? (
-        <Monitor className="size-[1.2rem]" />
-      ) : (
-        <>
-          <Sun className="size-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute size-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </>
-      )}
+      {/* 太阳/月亮跟随实际外观切换（跟随系统时也显示真实生效的明暗状态） */}
+      <Sun className="size-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute size-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
     </Button>
   );
 }
@@ -96,11 +90,21 @@ export function SiteHeader() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
+
+  // 展开时立即聚焦输入框
+  useEffect(() => {
+    if (searchOpen) mobileSearchRef.current?.focus();
+  }, [searchOpen]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = search.trim();
-    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+    if (q) {
+      navigate(`/search?q=${encodeURIComponent(q)}`);
+      setSearchOpen(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -184,6 +188,17 @@ export function SiteHeader() {
           />
         </form>
 
+        {/* 移动端：搜索按钮（在通知旁），点击展开 */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="sm:hidden"
+          aria-label="搜索"
+          aria-expanded={searchOpen}
+          onClick={() => setSearchOpen((v) => !v)}
+        >
+          <Search className="size-[1.15rem]" />
+        </Button>
         <NotificationBell />
         <ThemeToggle />
 
@@ -239,6 +254,31 @@ export function SiteHeader() {
           </div>
         )}
       </div>
+
+      {/* 移动端展开的搜索行 */}
+      {searchOpen && (
+        <div className="bg-background/95 border-t sm:hidden">
+          <form onSubmit={handleSearch} className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
+            <div className="relative flex-1">
+              <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+              <Input
+                ref={mobileSearchRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setSearchOpen(false);
+                }}
+                placeholder="搜索帖子 / 用户…"
+                className="h-9 pl-8"
+                aria-label="搜索"
+              />
+            </div>
+            <Button type="submit" size="sm">
+              搜索
+            </Button>
+          </form>
+        </div>
+      )}
     </header>
   );
 }
@@ -246,24 +286,12 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="safe-bottom border-t">
-      <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs sm:flex-row">
-        <div className="flex items-center gap-2">
+      <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center gap-1.5 px-4 py-6 text-xs sm:flex-row sm:justify-between">
+        <span>© {new Date().getFullYear()} 星辰旅人论坛</span>
+        <span className="flex items-center gap-2">
           <Sparkles className="text-primary size-3.5" />
-          <span>星辰旅人论坛 · 运行在 Cloudflare 边缘网络</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/search" className="hover:text-foreground">
-            搜索
-          </Link>
-          <a
-            href="https://www.cloudflare.com/developer-platform/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-foreground"
-          >
-            Workers + D1 + KV + R2
-          </a>
-        </div>
+          运行在 Cloudflare 边缘网络上
+        </span>
       </div>
     </footer>
   );

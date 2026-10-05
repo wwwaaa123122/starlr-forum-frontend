@@ -81,6 +81,11 @@ export function LoginPage() {
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? '登录中…' : '登录'}
             </Button>
+            <p className="text-center">
+              <Link to="/forgot-password" className="text-muted-foreground text-sm hover:underline">
+                忘记密码？
+              </Link>
+            </p>
           </form>
           <p className="text-muted-foreground mt-4 text-center text-sm">
             还没有账号？{' '}

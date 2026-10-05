@@ -24,7 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import type { AdminPost, AdminUser, AuditLogItem, Category, Pagination, ReportItem } from '@/lib/types';
+import type { AdminPost, AdminStaff, AdminUser, AuditLogItem, Category, Pagination, ReportItem } from '@/lib/types';
 
 function errMsg(e: unknown): string {
   return e instanceof ApiClientError ? e.message : '操作失败';
@@ -124,13 +124,14 @@ function UsersTab() {
       <Input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="搜索用户名 / 昵称 / 邮箱…"
+        placeholder="搜索 UID / 用户名 / 昵称 / 邮箱…"
         className="max-w-sm"
       />
       <div className="bg-card rounded-xl border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-16">UID</TableHead>
               <TableHead>用户</TableHead>
               <TableHead>邮箱</TableHead>
               <TableHead>角色</TableHead>
@@ -143,13 +144,14 @@ function UsersTab() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={8}>
                   <Skeleton className="my-2 h-8" />
                 </TableCell>
               </TableRow>
             ) : (
               (data?.users ?? []).map((u) => (
                 <TableRow key={u.id}>
+                  <TableCell className="font-mono text-xs">{u.uid}</TableCell>
                   <TableCell className="font-medium">{u.username}</TableCell>
                   <TableCell className="text-muted-foreground text-xs">{u.email}</TableCell>
                   <TableCell>
@@ -592,6 +594,156 @@ function ReportsTab() {
   );
 }
 
+// ---------------- 管理员配置（按 UID 授权，支持多管理员） ----------------
+function AdminsTab() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [uid, setUid] = useState('');
+  const [role, setRole] = useState<'admin' | 'moderator'>('admin');
+  const [submitting, setSubmitting] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'admins'],
+    queryFn: () => api<{ admins: AdminStaff[]; adminEmail: string | null }>('/api/admin/admins'),
+  });
+
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ['admin'] });
+
+  const grant = async () => {
+    const uidNum = Number.parseInt(uid, 10);
+    if (!Number.isInteger(uidNum) || uidNum <= 0) {
+      toast.error('请输入有效的 UID（正整数）');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await api<{ unchanged?: boolean; user: { uid: number; username: string; role: string } }>(
+        '/api/admin/admins',
+        { method: 'POST', body: { uid: uidNum, role } },
+      );
+      toast.success(
+        res.unchanged
+          ? `UID ${uidNum} 已经是该角色`
+          : `已将 UID ${uidNum}（@${res.user.username}）设为${role === 'admin' ? '管理员' : '版主'}`,
+      );
+      setUid('');
+      refresh();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const revoke = async (staff: AdminStaff) => {
+    if (!window.confirm(`确认撤销 UID ${staff.uid}（@${staff.username}）的管理权限？`)) return;
+    try {
+      await api(`/api/admin/admins/${staff.uid}`, { method: 'DELETE' });
+      toast.success(`已撤销 UID ${staff.uid} 的管理权限`);
+      refresh();
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card rounded-xl border p-4">
+        <h2 className="mb-1 text-sm font-semibold">授权新管理员</h2>
+        <p className="text-muted-foreground mb-3 text-xs">
+          输入目标用户的 UID（注册时自动分配，管理员为 UID 1），即可授予管理员或版主权限。告警邮箱：
+          {data?.adminEmail ?? '未配置'}
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="grant-uid">UID</Label>
+            <Input
+              id="grant-uid"
+              value={uid}
+              onChange={(e) => setUid(e.target.value.replace(/\D/g, ''))}
+              placeholder="例如 2"
+              inputMode="numeric"
+              className="w-32"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>角色</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as 'admin' | 'moderator')}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">管理员</SelectItem>
+                <SelectItem value="moderator">版主</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => void grant()} disabled={submitting || !uid}>
+            <ShieldCheck className="size-4" /> {submitting ? '授权中…' : '授权'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-xl border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">UID</TableHead>
+              <TableHead>用户名</TableHead>
+              <TableHead>昵称</TableHead>
+              <TableHead>邮箱</TableHead>
+              <TableHead>角色</TableHead>
+              <TableHead>最后登录</TableHead>
+              <TableHead className="text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7}>
+                  <Skeleton className="my-2 h-8" />
+                </TableCell>
+              </TableRow>
+            ) : (
+              (data?.admins ?? []).map((a) => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-mono text-xs">{a.uid}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link to={`/users/${a.username}`} className="hover:text-primary">
+                      {a.username}
+                    </Link>
+                    {a.id === user?.id && <Badge variant="secondary" className="ml-2">我</Badge>}
+                  </TableCell>
+                  <TableCell className="text-xs">{a.nickname}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{a.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={a.role === 'admin' ? 'default' : 'secondary'}>
+                      {a.role === 'admin' ? '管理员' : '版主'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {a.lastLoginAt ? timeAgo(a.lastLoginAt) : '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={a.id === user?.id}
+                      onClick={() => void revoke(a)}
+                    >
+                      <Trash2 className="size-3.5" /> 撤销
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // ---------------- 审计日志 ----------------
 function AuditTab() {
   const { data, isLoading } = useQuery({
@@ -680,6 +832,7 @@ export function AdminPage() {
           <TabsTrigger value="posts">帖子</TabsTrigger>
           <TabsTrigger value="categories">分类</TabsTrigger>
           <TabsTrigger value="reports">举报</TabsTrigger>
+          {isAdmin && <TabsTrigger value="admins">管理员</TabsTrigger>}
           {isAdmin && <TabsTrigger value="audit">审计日志</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview">
@@ -697,6 +850,11 @@ export function AdminPage() {
         <TabsContent value="reports">
           <ReportsTab />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="admins">
+            <AdminsTab />
+          </TabsContent>
+        )}
         {isAdmin && (
           <TabsContent value="audit">
             <AuditTab />

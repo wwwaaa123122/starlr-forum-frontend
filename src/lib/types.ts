@@ -20,6 +20,7 @@ export interface Category {
 
 export interface PostSummary {
   id: string;
+  authorUid?: number | null;
   title: string;
   excerpt?: string;
   isPinned: number | boolean;
@@ -53,6 +54,7 @@ export interface PostDetail extends PostSummary {
 
 export interface Reply {
   id: string;
+  authorUid?: number | null;
   content: string;
   parentReplyId: string | null;
   replyToUserId: string | null;
@@ -81,6 +83,7 @@ export interface NotificationItem {
 
 export interface UserProfile {
   id: string;
+  uid: number | null;
   username: string;
   nickname: string;
   avatarUrl: string | null;
@@ -94,6 +97,7 @@ export interface UserProfile {
 
 export interface AdminUser {
   id: string;
+  uid: number;
   username: string;
   email: string;
   nickname: string;
@@ -129,6 +133,17 @@ export interface ReportItem {
   createdAt: string;
   handledAt: string | null;
   reporterName: string;
+}
+
+export interface AdminStaff {
+  id: string;
+  uid: number;
+  username: string;
+  email: string;
+  nickname: string;
+  role: 'admin' | 'moderator';
+  createdAt: string;
+  lastLoginAt: string | null;
 }
 
 export interface AuditLogItem {

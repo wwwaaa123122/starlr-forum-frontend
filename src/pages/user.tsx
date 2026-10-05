@@ -83,6 +83,11 @@ export function UserPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-bold">{profile.nickname}</h1>
               <span className="text-muted-foreground text-sm">@{profile.username}</span>
+              {profile.uid != null && (
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  UID {profile.uid}
+                </Badge>
+              )}
               {profile.role === 'admin' && <Badge variant="destructive">管理员</Badge>}
               {profile.role === 'moderator' && <Badge variant="secondary">版主</Badge>}
               {profile.banned && <Badge variant="destructive">已封禁</Badge>}

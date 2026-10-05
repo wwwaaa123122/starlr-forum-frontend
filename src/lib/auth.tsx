@@ -18,6 +18,7 @@ import {
 
 export interface CurrentUser {
   id: string;
+  uid: number | null;
   username: string;
   nickname: string;
   email?: string;

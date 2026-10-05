@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Camera, KeyRound, LogOut, Star, Upload } from 'lucide-react';
+import { Camera, KeyRound, Laptop, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Upload } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { timeAgo } from '@/lib/utils';
@@ -37,10 +37,28 @@ export function SettingsPage() {
     enabled: Boolean(user),
   });
 
-  const { data: favorites } = useQuery({
-    queryKey: ['my-favorites'],
-    queryFn: () => api<{ posts: PostSummary[]; pagination: Pagination }>('/api/me/favorites?pageSize=10'),
+  const { data: sessions, refetch: refetchSessions } = useQuery({
+    queryKey: ['my-sessions'],
+    queryFn: () => api<SessionItem>('/api/me/sessions'),
     enabled: Boolean(user),
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => api(`/api/me/sessions/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      toast.success('会话已吊销，该设备将在下次续期时退出');
+      void refetchSessions();
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
+  const revokeOthersMutation = useMutation({
+    mutationFn: () => api('/api/me/sessions/revoke-others', { method: 'POST' }),
+    onSuccess: () => {
+      toast.success('已吊销其他所有会话');
+      void refetchSessions();
+    },
+    onError: (e) => toast.error(errMsg(e)),
   });
 
   useEffect(() => {
@@ -174,24 +192,61 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Star className="size-4" /> 我的收藏
+            <MonitorSmartphone className="size-4" /> 会话管理
           </CardTitle>
+          <CardDescription>
+            你的登录设备与活跃状态（位置来自 Cloudflare IP 库）。吊销后该设备的刷新令牌立即失效。
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {(favorites?.posts.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground text-sm">还没有收藏任何帖子</p>
-          ) : (
-            <ul className="space-y-2">
-              {favorites!.posts.map((post) => (
-                <li key={post.id} className="flex items-center justify-between gap-3 text-sm">
-                  <a href={`/posts/${post.id}`} className="hover:text-primary line-clamp-1">
-                    {post.title}
-                  </a>
-                  <span className="text-muted-foreground shrink-0 text-xs">{timeAgo(post.createdAt)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+        <CardContent className="space-y-3">
+          {(sessions?.sessions ?? []).map((sess) => {
+            const dev = describeDevice(sess.device);
+            const Icon = dev.kind === 'mobile' ? Smartphone : dev.kind === 'tablet' ? Tablet : Laptop;
+            return (
+              <div key={sess.id} className="flex flex-wrap items-start justify-between gap-3 rounded-lg border p-3">
+                <div className="flex min-w-0 gap-3">
+                  <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
+                    <Icon className="size-4" />
+                  </div>
+                  <div className="min-w-0 text-sm">
+                    <p className="flex flex-wrap items-center gap-2 font-medium">
+                      {dev.label}
+                      {sess.current ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-normal text-emerald-600 dark:text-emerald-400">
+                          <ShieldCheck className="size-3" /> 当前设备
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                      {sess.location || '未知地区'} · IP {sess.ip || '未知'}
+                      {sess.colo ? ` · 节点 ${sess.colo}` : ''}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {dev.browser} · 登录于 {timeAgo(sess.loginAt)} · 活跃 {timeAgo(sess.lastUsedAt)}
+                    </p>
+                  </div>
+                </div>
+                {!sess.current && (
+                  <Button variant="outline" size="sm" onClick={() => revokeMutation.mutate(sess.id)} disabled={revokeMutation.isPending}>
+                    <LogOut className="size-3.5" /> 吊销
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-xs">仅显示未过期的活跃会话</p>
+            {(sessions?.total ?? 0) > 1 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={revokeOthersMutation.isPending}
+                onClick={() => revokeOthersMutation.mutate()}
+              >
+                吊销其他所有会话（{(sessions?.total ?? 0) - 1}）
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -286,4 +341,50 @@ export function SettingsPage() {
       </Card>
     </div>
   );
+}
+
+interface SessionInfoItem {
+  id: string;
+  chainRoot: string;
+  device: string;
+  ip: string;
+  location: string;
+  colo: string;
+  asn: number | null;
+  loginAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+
+interface SessionItem {
+  sessions: SessionInfoItem[];
+  total: number;
+}
+
+function errMsg(e: unknown): string {
+  return e instanceof ApiClientError ? e.message : '操作失败';
+}
+
+/** 解析 User-Agent 为设备类型与浏览器名 */
+function describeDevice(ua: string): { kind: 'mobile' | 'tablet' | 'desktop'; label: string; browser: string } {
+  const s = ua || '';
+  const isTablet = /iPad|Tablet/i.test(s) || (/Android/i.test(s) && !/Mobile/i.test(s));
+  const isMobile = /iPhone|iPod|Mobile/i.test(s) || /Android/i.test(s);
+  const kind = isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop';
+  const label = isTablet ? '平板设备' : isMobile ? '手机设备' : '电脑设备';
+  const browser = /Edg\//.test(s)
+    ? 'Edge'
+    : /MicroMessenger/i.test(s)
+      ? '微信内置浏览器'
+      : /QQ\//i.test(s)
+        ? 'QQ 内置浏览器'
+        : /Chrome\//.test(s)
+          ? 'Chrome'
+          : /Firefox\//.test(s)
+            ? 'Firefox'
+            : /Safari\//.test(s)
+              ? 'Safari'
+              : '未知浏览器';
+  return { kind, label, browser };
 }

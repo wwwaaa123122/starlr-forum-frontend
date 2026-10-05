@@ -216,6 +216,14 @@ function ReplyItem({
             {reply.authorRole === 'admin' && <Badge variant="destructive" className="px-1 py-0 text-[10px]">管理员</Badge>}
             {reply.authorRole === 'moderator' && <Badge variant="secondary" className="px-1 py-0 text-[10px]">版主</Badge>}
             <span className="text-muted-foreground">{timeAgo(reply.createdAt)}</span>
+            {reply.editedAt && (
+              <span
+                className="text-muted-foreground inline-flex items-center gap-1"
+                title={`编辑于 ${new Date(reply.editedAt).toLocaleString('zh-CN')}`}
+              >
+                <Pencil className="size-3" /> 已编辑
+              </span>
+            )}
             {reply.replyToUserName && (
               <span className="text-muted-foreground">
                 回复 <span className="text-primary">@{reply.replyToUserName}</span>

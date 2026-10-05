@@ -16,7 +16,7 @@ export function HomePage() {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get('page') ?? '1');
-  const sort = (searchParams.get('sort') ?? 'latest') as 'latest' | 'new' | 'hot';
+  const sort = (searchParams.get('sort') ?? 'new') as 'new' | 'hot';
   const { user } = useAuth();
 
   const { data: categoriesData } = useQuery({
@@ -51,8 +51,7 @@ export function HomePage() {
         <div className="mb-4 flex items-center justify-between gap-2">
           <Tabs value={sort} onValueChange={(v) => setParams({ sort: v, page: 1 })}>
             <TabsList>
-              <TabsTrigger value="latest">最新回复</TabsTrigger>
-              <TabsTrigger value="new">最新发布</TabsTrigger>
+              <TabsTrigger value="new">最新文章</TabsTrigger>
               <TabsTrigger value="hot">热门</TabsTrigger>
             </TabsList>
           </Tabs>

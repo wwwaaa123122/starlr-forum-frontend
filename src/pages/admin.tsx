@@ -209,9 +209,9 @@ function UsersTab() {
             ) : (
               (data?.users ?? []).map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell className="font-mono text-xs">{u.uid}</TableCell>
-                  <TableCell className="font-medium">{u.username}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{u.email}</TableCell>
+                  <TableCell className="font-mono whitespace-nowrap text-xs">{u.uid}</TableCell>
+                  <TableCell className="whitespace-nowrap font-medium">{u.username}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{u.email}</TableCell>
                   <TableCell>
                     {isAdmin ? (
                       <Select
@@ -251,10 +251,10 @@ function UsersTab() {
                       <Badge variant="success">正常</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-xs">
+                  <TableCell className="whitespace-nowrap text-xs">
                     {u.postCount} / {u.replyCount}
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                     {u.lastLoginAt ? timeAgo(u.lastLoginAt) : '—'}
                   </TableCell>
                   <TableCell className="text-right">
@@ -414,13 +414,13 @@ function PostsTab() {
             ) : (
               (data?.posts ?? []).map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell className="max-w-64">
+                  <TableCell className="max-w-64 truncate">
                     <Link to={`/posts/${p.id}`} className="hover:text-primary line-clamp-1 font-medium">
                       {p.title}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-xs">{p.authorName}</TableCell>
-                  <TableCell className="text-xs">{p.categoryName}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">{p.authorName}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">{p.categoryName}</TableCell>
                   <TableCell>
                     {p.isDeleted ? (
                       <Badge variant="destructive">已删除</Badge>
@@ -640,8 +640,8 @@ function CategoriesTab() {
                       {c.name}
                     </span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{c.slug}</TableCell>
-                  <TableCell className="text-xs">{c.postCount}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{c.slug}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">{c.postCount}</TableCell>
                   {isAdmin ? (
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -869,15 +869,15 @@ function AdminsTab() {
             ) : (
               (data?.admins ?? []).map((a) => (
                 <TableRow key={a.id}>
-                  <TableCell className="font-mono text-xs">{a.uid}</TableCell>
+                  <TableCell className="font-mono whitespace-nowrap text-xs">{a.uid}</TableCell>
                   <TableCell className="font-medium">
                     <Link to={`/users/${a.username}`} className="hover:text-primary">
                       {a.username}
                     </Link>
                     {a.id === user?.id && <Badge variant="secondary" className="ml-2">我</Badge>}
                   </TableCell>
-                  <TableCell className="text-xs">{a.nickname}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{a.email}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">{a.nickname}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{a.email}</TableCell>
                   <TableCell>
                     <Badge variant={a.role === 'admin' ? 'default' : 'secondary'}>
                       {a.role === 'admin' ? '管理员' : '版主'}
@@ -1000,7 +1000,7 @@ function AuditTab() {
   return (
     <div className="bg-card rounded-xl border">
       {/* 移动端横向滑动查看，避免列内容被挤成多行 */}
-      <Table className="min-w-[720px]">
+      <Table className="min-w-[900px]">
         <TableHeader>
           <TableRow>
             <TableHead className="whitespace-nowrap">时间</TableHead>
@@ -1030,7 +1030,7 @@ function AuditTab() {
                 <TableCell className="whitespace-nowrap text-xs">
                   {log.targetType}/{(log.targetId ?? '').slice(0, 10)}
                 </TableCell>
-                <TableCell className="text-muted-foreground max-w-52 truncate text-xs">{log.detail}</TableCell>
+                <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{log.detail ?? '—'}</TableCell>
               </TableRow>
             ))
           )}

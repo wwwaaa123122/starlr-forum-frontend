@@ -19,6 +19,7 @@ import {
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { MarkdownView } from '@/components/markdown';
+import { MentionTextarea } from '@/components/mention-textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -224,7 +225,7 @@ function ReplyItem({
 
           {editing ? (
             <div className="mt-2 space-y-2">
-              <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={4} />
+              <MentionTextarea value={editContent} onChange={setEditContent} rows={4} />
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => void saveEdit()}>
                   保存
@@ -626,11 +627,11 @@ export function PostDetailPage() {
                   }}
                 />
               </div>
-              <Textarea
-                  ref={replyRef}
+              <MentionTextarea
+                  textareaRef={replyRef}
                   value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder="友善发言，支持 Markdown（**粗体**、`代码`、- 列表、> 引用、@用户名）"
+                  onChange={setReplyContent}
+                  placeholder="友善发言…（输入 @ 可提及他人）"
                   rows={4}
                   maxLength={20000}
                 />

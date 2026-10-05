@@ -14,11 +14,41 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
 import { cn } from '@/lib/utils';
 
-/** 在默认白名单基础上放开语法高亮的 class（hljs*） */
+/** @提及 → 站内用户链接（在 sanitize 之前跑，白名单放行 .mention） */
+function rehypeMentionLinks() {
+  type Node = { type: string; value?: string; children?: Node[]; tagName?: string; properties?: Record<string, unknown> };
+  const walk = (node: Node) => {
+    if (node.type === 'text' && typeof node.value === 'string' && node.value.includes('@')) {
+      const parts = node.value.split(/(@[\p{L}\p{N}_-]{2,24})/gu);
+      if (parts.length === 1) return;
+      node.type = 'element';
+      node.tagName = 'span';
+      node.properties = {};
+      node.children = parts
+        .filter((part) => part !== '')
+        .map((part) =>
+          part.startsWith('@')
+            ? {
+                type: 'element',
+                tagName: 'a',
+                properties: { href: `/users/${encodeURIComponent(part.slice(1))}`, className: 'mention' },
+                children: [{ type: 'text', value: part }],
+              }
+            : { type: 'text', value: part },
+        );
+      return;
+    }
+    if (Array.isArray(node.children)) node.children.forEach((child) => walk(child));
+  };
+  return (tree: unknown) => walk(tree as Node);
+}
+
+/** 在默认白名单基础上放开语法高亮的 class（hljs*）与 .mention 链接 */
 const sanitizeSchema = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
+    a: [...(defaultSchema.attributes?.a ?? []), ['className', 'mention']],
     code: [...(defaultSchema.attributes?.code ?? []), ['className', /^language-./, 'hljs']],
     span: [...(defaultSchema.attributes?.span ?? []), ['className', /^hljs(-|$)/]],
     input: [['type', 'checkbox'], 'checked', 'disabled'],
@@ -41,11 +71,18 @@ export const MarkdownView = memo(function MarkdownView({ content, className }: M
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
+          rehypeMentionLinks,
           [rehypeSanitize, sanitizeSchema],
           [rehypeHighlight, { detect: false, ignoreMissing: true }],
         ]}
         components={{
-          a: ({ ...props }) => <a {...props} target="_blank" rel="noopener noreferrer nofollow" />,
+          a: ({ className, ...props }) =>
+            // @提及 是站内链接，当前页打开；其余链接新窗口打开
+            className?.toString().includes('mention') ? (
+              <a {...props} className={className} />
+            ) : (
+              <a {...props} className={className} target="_blank" rel="noopener noreferrer nofollow" />
+            ),
         }}
       >
         {content}

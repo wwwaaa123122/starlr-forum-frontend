@@ -236,3 +236,16 @@
 .dark .md-content .hljs-title, .dark .md-content .hljs-title.function_, .dark .md-content .hljs-title.class_ { color: #d2a8ff; }
 .dark .md-content .hljs-attr, .dark .md-content .hljs-symbol, .dark .md-content .hljs-bullet, .dark .md-content .hljs-link { color: #ffa657; }
 .dark .md-content .hljs-deletion { color: #ffdcd7; background: #67060c; }
+
+/* @提及 链接 */
+.md-content .mention {
+  color: var(--color-indigo-500, #6366f1);
+  font-weight: 500;
+  text-decoration: none;
+}
+.md-content .mention:hover {
+  text-decoration: underline;
+}
+.dark .md-content .mention {
+  color: var(--color-indigo-400, #818cf8);
+}

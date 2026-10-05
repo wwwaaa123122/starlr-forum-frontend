@@ -6,6 +6,7 @@ import { Send } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { MarkdownView } from '@/components/markdown';
+import { MentionTextarea } from '@/components/mention-textarea';
 import { ImageUploadButton } from '@/components/image-upload-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -206,11 +207,11 @@ export function PostEditorPage() {
               <TabsTrigger value="preview">预览</TabsTrigger>
             </TabsList>
             <TabsContent value="write">
-              <Textarea
-                ref={contentRef}
+              <MentionTextarea
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={'支持 Markdown：\n\n## 标题\n**粗体** *斜体* `行内代码`\n\n```js\nconsole.log("代码块");\n```\n\n> 引用\n- 列表\n\n@用户名 可以提到其他人'}
+                onChange={setContent}
+                textareaRef={contentRef}
+                placeholder="写点什么…（支持 Markdown，输入 @ 可提及他人）"
                 rows={14}
                 maxLength={50000}
                 className="font-mono text-sm"

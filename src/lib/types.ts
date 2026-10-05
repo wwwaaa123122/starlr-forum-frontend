@@ -140,6 +140,12 @@ export interface ReportItem {
   createdAt: string;
   handledAt: string | null;
   reporterName: string;
+  /** 被举报内容（软删除后仍返回，便于回溯） */
+  targetTitle?: string | null;
+  targetContent?: string | null;
+  targetAuthorName?: string | null;
+  targetUserId?: string | null;
+  targetDeleted?: number | boolean;
 }
 
 export interface AdminStaff {

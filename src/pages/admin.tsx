@@ -669,26 +669,6 @@ function CategoriesTab() {
 
   return (
     <div className="space-y-4">
-      {isAdmin && (
-        <div className="bg-card space-y-3 rounded-xl border p-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
-            <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述" maxLength={200} />
-          </div>
-          <div>
-            <Label className="text-muted-foreground mb-1.5 block text-xs">分类图标（emoji 或上传图片）</Label>
-            <IconPicker icon={icon} onChange={setIcon} />
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => void create()} disabled={!name.trim() || !slug.trim()}>
-              {editId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
-              {editId ? '保存' : '创建'}
-            </Button>
-          </div>
-        </div>
-      )}
-
       <div className="bg-card rounded-xl border">
         <Table className="min-w-[520px]">
           <TableHeader>
@@ -747,6 +727,26 @@ function CategoriesTab() {
           </TableBody>
         </Table>
       </div>
+      {isAdmin && (
+        <div className="bg-card space-y-3 rounded-xl border p-4">
+          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
+            <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述" maxLength={200} />
+          </div>
+          <div>
+            <Label className="text-muted-foreground mb-1.5 block text-xs">分类图标（emoji 或上传图片）</Label>
+            <IconPicker icon={icon} onChange={setIcon} />
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => void create()} disabled={!name.trim() || !slug.trim()}>
+              {editId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+              {editId ? '保存' : '创建'}
+            </Button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -764,10 +764,29 @@ function ReportsTab() {
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['admin'] });
 
-  const handle = async (id: string, action: 'resolve' | 'dismiss') => {
+  const [handleTarget, setHandleTarget] = useState<ReportItem | null>(null);
+  const [handleAction, setHandleAction] = useState('dismiss');
+  const [handleDays, setHandleDays] = useState('7');
+  const [handleNote, setHandleNote] = useState('');
+
+  const handle = async () => {
+    if (!handleTarget) return;
+    if (handleAction !== 'dismiss' && handleAction !== 'delete_content' && !handleNote.trim()) {
+      toast.error('请填写处理原因');
+      return;
+    }
     try {
-      await api(`/api/admin/reports/${id}/${action}`, { method: 'POST', body: { note: '' } });
-      toast.success(action === 'resolve' ? '已处理' : '已关闭');
+      await api(`/api/admin/reports/${handleTarget.id}/resolve`, {
+        method: 'POST',
+        body: {
+          action: handleAction,
+          note: handleNote,
+          days: handleAction === 'mute' || handleAction === 'ban' ? (handleDays === 'permanent' ? null : Number(handleDays)) : undefined,
+        },
+      });
+      toast.success(handleAction === 'dismiss' ? '已按无违规关闭' : '已处理');
+      setHandleTarget(null);
+      setHandleNote('');
       refresh();
     } catch (e) {
       toast.error(errMsg(e));
@@ -807,19 +826,31 @@ function ReportsTab() {
                   举报人 {r.reporterName} · {timeAgo(r.createdAt)}
                 </span>
               </div>
-              {r.detail && <p className="text-muted-foreground mt-2 text-sm">{r.detail}</p>}
-              {r.targetType === 'post' && (
-                <Link to={`/posts/${r.targetId}`} className="text-primary mt-2 inline-block text-xs hover:underline">
-                  查看目标 →
-                </Link>
+              {r.detail && <p className="text-muted-foreground mt-2 text-sm">举报说明：{r.detail}</p>}
+              <div className="bg-muted/40 mt-2 rounded-lg border p-3">
+                <p className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">
+                    被举报{r.targetType === 'post' ? '帖子' : r.targetType === 'reply' ? '回复' : '用户'}：
+                  </span>
+                  {r.targetAuthorName && <span className="font-medium">@{r.targetAuthorName}</span>}
+                  {r.targetDeleted ? <Badge variant="destructive" className="px-1 py-0 text-[10px]">内容已删除</Badge> : null}
+                </p>
+                {r.targetTitle && <p className="mt-1 line-clamp-2 text-sm font-medium">{r.targetTitle}</p>}
+                {r.targetContent && <p className="text-muted-foreground mt-1 line-clamp-3 text-xs">{r.targetContent}</p>}
+              </div>
+              {r.resolutionNote && r.status !== 'pending' && (
+                <p className="text-muted-foreground mt-2 text-xs">处理结果：{r.resolutionNote}</p>
               )}
               {r.status === 'pending' && (
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" onClick={() => void handle(r.id, 'resolve')}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setHandleTarget(r);
+                      setHandleAction('dismiss');
+                    }}
+                  >
                     处理
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => void handle(r.id, 'dismiss')}>
-                    关闭
                   </Button>
                 </div>
               )}
@@ -827,9 +858,63 @@ function ReportsTab() {
           ))
         )}
       </div>
+      <Dialog open={Boolean(handleTarget)} onOpenChange={(v) => !v && setHandleTarget(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>处理举报</DialogTitle>
+          <DialogDescription>选择处理方式。被举报内容由系统留存，处理后仍可在此回溯查看。</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>处理方式</Label>
+            <Select value={handleAction} onValueChange={setHandleAction}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dismiss">无违规（仅关闭举报）</SelectItem>
+                <SelectItem value="mute">禁言作者</SelectItem>
+                <SelectItem value="ban">封禁作者</SelectItem>
+                <SelectItem value="delete_content">删除被举报内容</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(handleAction === 'mute' || handleAction === 'ban') && (
+            <div className="space-y-1.5">
+              <Label>时长</Label>
+              <Select value={handleDays} onValueChange={setHandleDays}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 天</SelectItem>
+                  <SelectItem value="3">3 天</SelectItem>
+                  <SelectItem value="7">7 天</SelectItem>
+                  <SelectItem value="30">30 天</SelectItem>
+                  <SelectItem value="permanent">永久</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label>处理备注{handleAction !== 'dismiss' && handleAction !== 'delete_content' ? '（必填，会通知对方）' : ''}</Label>
+            <Textarea value={handleNote} onChange={(e) => setHandleNote(e.target.value)} rows={2} placeholder={handleAction === 'dismiss' ? '可留空' : '例如：垃圾广告'} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setHandleTarget(null)}>
+            取消
+          </Button>
+          <Button variant={handleAction === 'dismiss' ? 'default' : 'destructive'} onClick={() => void handle()}>
+            确认处理
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }
+
 
 // ---------------- 管理员配置（按 UID 授权，支持多管理员） ----------------
 function AdminsTab() {

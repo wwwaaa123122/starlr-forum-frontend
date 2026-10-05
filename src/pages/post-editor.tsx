@@ -188,7 +188,7 @@ export function PostEditorPage() {
                   addTag();
                 }
               }}
-              placeholder="输入标签后回车添加，如 cloudflare、react"
+              placeholder="输入标签后回车添加"
             />
             <p className="text-muted-foreground text-xs">
               回车或逗号添加，可一次粘贴多个（用逗号分隔）；点击已添加的标签可删除

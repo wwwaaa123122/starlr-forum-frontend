@@ -13,6 +13,7 @@ export function RegisterPage() {
   const { register, user } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -36,7 +37,13 @@ export function RegisterPage() {
     }
     setSubmitting(true);
     try {
-      await register({ username: username.trim(), email: email.trim(), password, turnstileToken: turnstileToken || undefined });
+      await register({
+        username: username.trim(),
+        nickname: nickname.trim() || undefined,
+        email: email.trim(),
+        password,
+        turnstileToken: turnstileToken || undefined,
+      });
       toast.success('注册成功，欢迎加入星辰旅人论坛！');
       navigate('/');
     } catch (err) {
@@ -73,6 +80,17 @@ export function RegisterPage() {
                 placeholder="3-24 位，中文/字母/数字/下划线"
                 autoComplete="username"
                 autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nickname">昵称</Label>
+              <Input
+                id="nickname"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="展示昵称，可随时修改（默认使用用户名）"
+                maxLength={24}
+                autoComplete="nickname"
               />
             </div>
             <div className="space-y-1.5">

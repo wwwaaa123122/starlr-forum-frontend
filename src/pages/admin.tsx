@@ -604,7 +604,7 @@ function AdminsTab() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'admins'],
-    queryFn: () => api<{ admins: AdminStaff[]; adminEmail: string | null }>('/api/admin/admins'),
+    queryFn: () => api<{ admins: AdminStaff[]; ownerEmail: string | null }>('/api/admin/admins'),
   });
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['admin'] });
@@ -651,8 +651,8 @@ function AdminsTab() {
       <div className="bg-card rounded-xl border p-4">
         <h2 className="mb-1 text-sm font-semibold">授权新管理员</h2>
         <p className="text-muted-foreground mb-3 text-xs">
-          输入目标用户的 UID（注册时自动分配，管理员为 UID 1），即可授予管理员或版主权限。告警邮箱：
-          {data?.adminEmail ?? '未配置'}
+          输入目标用户的 UID（注册时自动分配，管理员为 UID 1），即可授予管理员或版主权限。
+          管理告警发送至 UID 1 邮箱：{data?.ownerEmail ?? '（UID 1 未设置邮箱）'}
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <div className="space-y-1.5">

@@ -2,10 +2,10 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, FileText, Flag, ImagePlus, Pencil, Plus, RotateCcw, ScrollText, Send, ShieldCheck, Trash2, User, Users, X } from 'lucide-react';
+import { Ban, CheckCircle, Eye, FileText, Flag, ImagePlus, Pencil, Plus, RotateCcw, ScrollText, Send, ShieldCheck, Trash2, TrendingUp, User, Users, X } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { timeAgo } from '@/lib/utils';
+import { formatNumber, timeAgo } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +37,9 @@ interface AdminStats {
   replies: number;
   pendingReports: number;
   bannedUsers: number;
+  totalViews: number;
+  avgViews: number;
+  topPosts: { id: string; title: string; viewCount: number; replyCount: number; likeCount: number; authorName: string }[];
 }
 
 function StatCards() {
@@ -46,28 +49,82 @@ function StatCards() {
     refetchInterval: 30_000,
   });
 
-  if (isLoading) return <div className="grid gap-3 sm:grid-cols-4"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></div>;
+  if (isLoading)
+    return (
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-20" />
+        ))}
+      </div>
+    );
 
   const items = [
     { label: '用户', value: data?.users ?? 0, icon: Users },
     { label: '帖子', value: data?.posts ?? 0, icon: FileText },
+    { label: '总浏览量', value: data?.totalViews ?? 0, icon: Eye },
+    { label: '篇均浏览', value: data?.avgViews ?? 0, icon: TrendingUp },
     { label: '待处理举报', value: data?.pendingReports ?? 0, icon: Flag },
     { label: '封禁用户', value: data?.bannedUsers ?? 0, icon: Ban },
   ];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-4">
+    <div className="space-y-4">
+    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {items.map(({ label, value, icon: Icon }) => (
         <div key={label} className="bg-card flex items-center gap-3 rounded-xl border p-4">
           <div className="bg-primary/10 text-primary rounded-lg p-2">
             <Icon className="size-4" />
           </div>
           <div>
-            <div className="text-xl font-bold">{value}</div>
+            <div className="text-xl font-bold">{formatNumber(value)}</div>
             <div className="text-muted-foreground text-xs">{label}</div>
           </div>
         </div>
       ))}
+      </div>
+
+      {/* 浏览量排行 */}
+      <div className="bg-card rounded-xl border">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h3 className="text-sm font-semibold">浏览量排行</h3>
+          <span className="text-muted-foreground text-xs">Top 10</span>
+        </div>
+        <Table className="min-w-[520px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">#</TableHead>
+              <TableHead>标题</TableHead>
+              <TableHead className="text-right">浏览</TableHead>
+              <TableHead className="text-right">回复</TableHead>
+              <TableHead className="text-right">点赞</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(data?.topPosts ?? []).length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-muted-foreground text-center text-xs">
+                  暂无数据
+                </TableCell>
+              </TableRow>
+            ) : (
+              (data?.topPosts ?? []).map((p, i) => (
+                <TableRow key={p.id}>
+                  <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                  <TableCell className="max-w-64 truncate text-xs font-medium">
+                    <Link to={`/posts/${p.id}`} className="hover:underline">
+                      {p.title}
+                    </Link>
+                    <span className="text-muted-foreground ml-1">· {p.authorName}</span>
+                  </TableCell>
+                  <TableCell className="text-right text-xs">{formatNumber(p.viewCount)}</TableCell>
+                  <TableCell className="text-right text-xs">{formatNumber(p.replyCount)}</TableCell>
+                  <TableCell className="text-right text-xs">{formatNumber(p.likeCount)}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
@@ -129,7 +186,7 @@ function UsersTab() {
         className="max-w-sm"
       />
       <div className="bg-card rounded-xl border">
-        <Table>
+        <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-16">UID</TableHead>
@@ -337,7 +394,7 @@ function PostsTab() {
       </Select>
 
       <div className="bg-card rounded-xl border">
-        <Table>
+        <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
               <TableHead>标题</TableHead>
@@ -558,7 +615,7 @@ function CategoriesTab() {
       )}
 
       <div className="bg-card rounded-xl border">
-        <Table>
+        <Table className="min-w-[520px]">
           <TableHeader>
             <TableRow>
               <TableHead>分类</TableHead>
@@ -790,7 +847,7 @@ function AdminsTab() {
       </div>
 
       <div className="bg-card rounded-xl border">
-        <Table>
+        <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-16">UID</TableHead>
@@ -942,13 +999,14 @@ function AuditTab() {
 
   return (
     <div className="bg-card rounded-xl border">
-      <Table>
+      {/* 移动端横向滑动查看，避免列内容被挤成多行 */}
+      <Table className="min-w-[720px]">
         <TableHeader>
           <TableRow>
-            <TableHead>时间</TableHead>
-            <TableHead>操作者</TableHead>
-            <TableHead>动作</TableHead>
-            <TableHead>目标</TableHead>
+            <TableHead className="whitespace-nowrap">时间</TableHead>
+            <TableHead className="whitespace-nowrap">操作者</TableHead>
+            <TableHead className="whitespace-nowrap">动作</TableHead>
+            <TableHead className="whitespace-nowrap">目标</TableHead>
             <TableHead>详情</TableHead>
           </TableRow>
         </TableHeader>
@@ -962,14 +1020,14 @@ function AuditTab() {
           ) : (
             (data?.logs ?? []).map((log) => (
               <TableRow key={log.id}>
-                <TableCell className="text-muted-foreground text-xs">{log.createdAt}</TableCell>
-                <TableCell className="text-xs">{log.actorName ?? '—'}</TableCell>
-                <TableCell>
+                <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{log.createdAt}</TableCell>
+                <TableCell className="whitespace-nowrap text-xs">{log.actorName ?? '—'}</TableCell>
+                <TableCell className="whitespace-nowrap">
                   <Badge variant="outline" className="font-mono text-[10px]">
                     {log.action}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs">
+                <TableCell className="whitespace-nowrap text-xs">
                   {log.targetType}/{(log.targetId ?? '').slice(0, 10)}
                 </TableCell>
                 <TableCell className="text-muted-foreground max-w-52 truncate text-xs">{log.detail}</TableCell>

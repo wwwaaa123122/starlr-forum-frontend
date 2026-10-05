@@ -53,7 +53,7 @@ export function LoginPage() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>登录</CardTitle>
-          <CardDescription>使用你的星辰旅人账号</CardDescription>
+          <CardDescription>使用你的 Starlr Forum 账号</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">

@@ -28,3 +28,22 @@ export function formatNumber(n: number | undefined | null): string {
   if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
   return String(v);
 }
+
+/** 去除 Markdown 语法，得到适合摘要的纯文本（列表/标题/代码/链接/图片/强调等） */
+export function stripMarkdown(md: string): string {
+  return md
+    .replace(/```[\s\S]*?(```|$)/g, ' ') // 代码块
+    .replace(/`([^`]*)`/g, '$1') // 行内代码
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // 图片 → alt
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // 链接 → 文本
+    .replace(/^#{1,6}\s+/gm, '') // 标题
+    .replace(/^\s*>\s?/gm, '') // 引用
+    .replace(/^\s*([-*+]|\d+\.)\s+/gm, '') // 列表标记
+    .replace(/(\*\*|__)(.*?)\1/g, '$2') // 粗体
+    .replace(/(\*|_)(.*?)\1/g, '$2') // 斜体
+    .replace(/~~(.*?)~~/g, '$1') // 删除线
+    .replace(/\|/g, ' ') // 表格分隔符
+    .replace(/\s*\n\s*/g, ' ') // 换行 → 空格
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}

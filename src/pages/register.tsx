@@ -44,7 +44,7 @@ export function RegisterPage() {
         password,
         turnstileToken: turnstileToken || undefined,
       });
-      toast.success('注册成功，欢迎加入星辰旅人论坛！');
+      toast.success('注册成功，欢迎加入 Starlr Forum！');
       navigate('/');
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -67,7 +67,7 @@ export function RegisterPage() {
       <Card>
         <CardHeader>
           <CardTitle>注册</CardTitle>
-          <CardDescription>创建你的星辰旅人账号</CardDescription>
+          <CardDescription>创建你的 Starlr Forum 账号</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">

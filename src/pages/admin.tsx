@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, FileText, Flag, Pencil, Plus, RotateCcw, ScrollText, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Ban, CheckCircle, FileText, Flag, ImagePlus, Pencil, Plus, RotateCcw, ScrollText, Send, ShieldCheck, Trash2, User, Users, X } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { timeAgo } from '@/lib/utils';
@@ -22,8 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CategoryIcon } from '@/components/category-icon';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AdminPost, AdminStaff, AdminUser, AuditLogItem, Category, Pagination, ReportItem } from '@/lib/types';
 
 function errMsg(e: unknown): string {
@@ -389,6 +390,83 @@ function PostsTab() {
 }
 
 // ---------------- 分类管理 ----------------
+/** 分类常用图标（点击即选） */
+const CATEGORY_EMOJIS = [
+  '📢','💻','💬','❓','🎨','🎮','📚','🎬','🎵','⚽','🍜','✈️','🌱','🔧','📷','🧠','🚀','⭐','🔥','💡','🏆','🐾','💼','🛒','📝','🎓','🏠','❤️','🌈','☕',
+];
+
+function IconPicker({ icon, onChange }: { icon: string; onChange: (v: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const upload = async (file: File) => {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('purpose', 'category');
+      const res = await api<{ url: string }>('/api/upload', { method: 'POST', body: form });
+      onChange(res.url);
+      toast.success('图片已上传，点击「创建/保存」生效');
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-md border">
+          <CategoryIcon icon={icon} className="size-6 text-xl" />
+        </span>
+        <Input
+          value={/^(https?:\/\/|\/api\/)/.test(icon) ? '' : icon}
+          onChange={(e) => onChange(e.target.value.slice(0, 4))}
+          placeholder="emoji"
+          className="h-10 w-20 text-center"
+          maxLength={4}
+        />
+        <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+          <ImagePlus className="size-4" /> {uploading ? '上传中…' : '图片'}
+        </Button>
+        {icon && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange('')}>
+            <X className="size-4" />
+          </Button>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void upload(f);
+            e.target.value = '';
+          }}
+        />
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {CATEGORY_EMOJIS.map((e) => (
+          <button
+            key={e}
+            type="button"
+            onClick={() => onChange(e)}
+            className={`rounded px-1.5 py-0.5 text-base leading-none transition-colors hover:bg-accent ${
+              icon === e ? 'bg-accent ring-1 ring-primary' : ''
+            }`}
+            aria-label={`选择图标 ${e}`}
+          >
+            {e}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CategoriesTab() {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
@@ -443,15 +521,22 @@ function CategoriesTab() {
   return (
     <div className="space-y-4">
       {isAdmin && (
-        <div className="bg-card grid gap-3 rounded-xl border p-4 sm:grid-cols-[80px_1fr_1fr_1fr_auto]">
-          <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="图标" maxLength={4} />
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
-          <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述" maxLength={200} />
-          <Button onClick={() => void create()} disabled={!name.trim() || !slug.trim()}>
-            {editId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
-            {editId ? '保存' : '创建'}
-          </Button>
+        <div className="bg-card space-y-3 rounded-xl border p-4">
+          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
+            <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述" maxLength={200} />
+          </div>
+          <div>
+            <Label className="text-muted-foreground mb-1.5 block text-xs">分类图标（emoji 或上传图片）</Label>
+            <IconPicker icon={icon} onChange={setIcon} />
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => void create()} disabled={!name.trim() || !slug.trim()}>
+              {editId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+              {editId ? '保存' : '创建'}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -476,7 +561,10 @@ function CategoriesTab() {
               (data?.categories ?? []).map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">
-                    {c.icon} {c.name}
+                    <span className="flex items-center gap-2">
+                      <CategoryIcon icon={c.icon} className="size-5" />
+                      {c.name}
+                    </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">{c.slug}</TableCell>
                   <TableCell className="text-xs">{c.postCount}</TableCell>
@@ -745,6 +833,90 @@ function AdminsTab() {
 }
 
 // ---------------- 审计日志 ----------------
+function NotificationsTab() {
+  const [mode, setMode] = useState<'all' | 'uid'>('all');
+  const [uid, setUid] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [link, setLink] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const send = async () => {
+    const target: 'all' | number = mode === 'all' ? 'all' : Number(uid);
+    if (mode === 'uid' && (!uid || !Number.isInteger(target as number) || (target as number) <= 0)) {
+      toast.error('请输入有效的 UID');
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await api<{ created: number }>('/api/admin/notifications', {
+        method: 'POST',
+        body: { title: title.trim(), body: body.trim(), link: link.trim(), target },
+      });
+      toast.success(`通知已发送给 ${res.created} 位用户`);
+      setTitle('');
+      setBody('');
+      setLink('');
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="bg-card space-y-4 rounded-xl border p-4">
+      <div>
+        <h3 className="text-sm font-semibold">发送系统通知</h3>
+        <p className="text-muted-foreground mt-0.5 text-xs">
+          通知会出现在用户的通知中心（系统通知）。可群发全部用户，或按 UID 定向发送。
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant={mode === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setMode('all')}>
+          <Users className="size-4" /> 全部用户
+        </Button>
+        <Button variant={mode === 'uid' ? 'default' : 'outline'} size="sm" onClick={() => setMode('uid')}>
+          <User className="size-4" /> 指定 UID
+        </Button>
+        {mode === 'uid' && (
+          <Input
+            value={uid}
+            onChange={(e) => setUid(e.target.value.replace(/\D/g, ''))}
+            placeholder="用户 UID，如 1"
+            className="h-8 w-36"
+            inputMode="numeric"
+          />
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="通知标题" maxLength={100} />
+        <Textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="通知正文（可选）"
+          maxLength={500}
+          rows={3}
+        />
+        <Input
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="跳转链接（可选）：/posts/xxx 或 https://…"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-xs">发送频率限制：每小时 10 次</span>
+        <Button onClick={() => void send()} disabled={sending || !title.trim()}>
+          <Send className="size-4" /> {sending ? '发送中…' : '发送通知'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function AuditTab() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'audit-logs'],
@@ -832,6 +1004,7 @@ export function AdminPage() {
           <TabsTrigger value="posts">帖子</TabsTrigger>
           <TabsTrigger value="categories">分类</TabsTrigger>
           <TabsTrigger value="reports">举报</TabsTrigger>
+          {isAdmin && <TabsTrigger value="notify">通知</TabsTrigger>}
           {isAdmin && <TabsTrigger value="admins">管理员</TabsTrigger>}
           {isAdmin && <TabsTrigger value="audit">审计日志</TabsTrigger>}
         </TabsList>
@@ -850,6 +1023,11 @@ export function AdminPage() {
         <TabsContent value="reports">
           <ReportsTab />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="notify">
+            <NotificationsTab />
+          </TabsContent>
+        )}
         {isAdmin && (
           <TabsContent value="admins">
             <AdminsTab />

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Eye, Heart, MessageSquare, Pin, Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { formatNumber, timeAgo } from '@/lib/utils';
+import { formatNumber, stripMarkdown, timeAgo } from '@/lib/utils';
 import type { PostSummary } from '@/lib/types';
 
 function tagNames(tags: PostSummary['tags']): string[] {
@@ -13,6 +13,7 @@ function tagNames(tags: PostSummary['tags']): string[] {
 export function PostCard({ post }: { post: PostSummary }) {
   const tags = tagNames(post.tags);
   const authorName = post.authorName ?? '匿名';
+  const excerpt = post.excerpt ? stripMarkdown(post.excerpt) : '';
   return (
     <article className="hover:bg-accent/40 group flex gap-3 border-b px-4 py-3.5 transition-colors last:border-b-0">
       <Link to={`/users/${encodeURIComponent(authorName)}`} className="shrink-0" aria-label={`${authorName} 的主页`}>
@@ -42,8 +43,8 @@ export function PostCard({ post }: { post: PostSummary }) {
           </Link>
         </div>
 
-        {post.excerpt && (
-          <p className="text-muted-foreground mt-1 line-clamp-2 text-[13px] leading-relaxed">{post.excerpt}</p>
+        {excerpt && (
+          <p className="text-muted-foreground mt-1 line-clamp-2 text-[13px] leading-relaxed">{excerpt}</p>
         )}
 
         <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

@@ -148,7 +148,7 @@ export function SiteHeader() {
           <SheetContent side="left" className="w-72">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
-                <Sparkles className="text-primary size-4" /> 星辰旅人论坛
+                <Sparkles className="text-primary size-4" /> Starlr Forum
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-1 px-4" onClick={() => setMobileOpen(false)}>
@@ -167,8 +167,8 @@ export function SiteHeader() {
 
         <Link to="/" className="flex shrink-0 items-center gap-2 font-bold">
           <Sparkles className="text-primary size-5" />
-          <span className="hidden sm:inline">星辰旅人论坛</span>
-          <span className="sm:hidden">星辰旅人</span>
+          <span className="hidden sm:inline">Starlr Forum</span>
+          <span className="sm:hidden">Starlr</span>
         </Link>
 
         {/* 桌面导航 */}
@@ -287,7 +287,7 @@ export function SiteFooter() {
   return (
     <footer className="safe-bottom border-t">
       <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center gap-1.5 px-4 py-6 text-xs sm:flex-row sm:justify-between">
-        <span>© {new Date().getFullYear()} 星辰旅人论坛</span>
+        <span>© {new Date().getFullYear()} Starlr Forum</span>
         <span className="flex items-center gap-2">
           <Sparkles className="text-primary size-3.5" />
           运行在 Cloudflare 边缘网络上

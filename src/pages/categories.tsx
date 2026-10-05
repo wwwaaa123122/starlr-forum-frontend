@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { CategoryIcon } from '@/components/category-icon';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Category } from '@/lib/types';
@@ -30,7 +31,7 @@ export function CategoriesPage() {
         {(data?.categories ?? []).map((category) => (
           <Link key={category.id} to={`/categories/${category.slug}`}>
             <Card className="hover:border-primary/50 flex-row items-center gap-4 px-5 py-4 transition-colors">
-              <span className="text-2xl">{category.icon || '📁'}</span>
+              <CategoryIcon icon={category.icon} className="size-8 text-2xl" />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">{category.name}</div>
                 <p className="text-muted-foreground line-clamp-1 text-sm">{category.description}</p>

@@ -5,6 +5,7 @@ import { PenLine } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PostCard, PostCardSkeleton } from '@/components/post-card';
+import { CategoryIcon } from '@/components/category-icon';
 import { PaginationControls } from '@/components/pagination-controls';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -127,8 +128,9 @@ export function HomePage() {
                 to={`/categories/${c.slug}`}
                 className={`flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent ${slug === c.slug ? 'bg-accent font-medium' : ''}`}
               >
-                <span className="truncate">
-                  {c.icon} {c.name}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <CategoryIcon icon={c.icon} className="size-4 shrink-0" />
+                  <span className="truncate">{c.name}</span>
                 </span>
                 <span className="text-muted-foreground text-xs">{c.postCount}</span>
               </Link>
@@ -139,7 +141,7 @@ export function HomePage() {
         <div className="bg-card rounded-xl border p-4 text-sm">
           <h2 className="mb-2 text-sm font-semibold">关于</h2>
           <p className="text-muted-foreground leading-relaxed">
-            星辰旅人论坛 —— 运行在 Cloudflare Workers + D1 上的现代化中文社区，支持 Markdown、标签、通知与 @ 提及。
+            Starlr Forum —— 运行在 Cloudflare Workers + D1 上的现代化中文社区，支持 Markdown、标签、通知与 @ 提及。
           </p>
         </div>
       </aside>

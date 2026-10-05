@@ -86,6 +86,17 @@ export function NotificationsPage() {
         ) : (
           notifications.map((n) => {
             const meta = TYPE_META[n.type] ?? TYPE_META.system;
+            let systemPayload: { title: string; body?: string; link?: string } | null = null;
+            if (n.type === 'system' && n.content?.startsWith('{')) {
+              try {
+                const parsed = JSON.parse(n.content) as { title?: string; body?: string; link?: string };
+                if (parsed && typeof parsed.title === 'string') {
+                  systemPayload = { title: parsed.title, body: parsed.body, link: parsed.link };
+                }
+              } catch {
+                // 旧格式纯文本
+              }
+            }
             const Icon = meta.icon;
             const read = Boolean(n.isRead);
             const targetLink = n.postId ? `/posts/${n.postId}` : null;
@@ -111,7 +122,28 @@ export function NotificationsPage() {
                       </Link>
                     )}
                   </p>
-                  {n.content && <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">{n.content}</p>}
+                  {systemPayload && (
+                    <div className="mt-0.5">
+                      <p className="text-xs font-medium">{systemPayload.title}</p>
+                      {systemPayload.body && (
+                        <p className="text-muted-foreground mt-0.5 line-clamp-3 text-xs">{systemPayload.body}</p>
+                      )}
+                      {systemPayload.link && (
+                        <Link
+                          to={systemPayload.link}
+                          onClick={() => {
+                            if (!read) markRead.mutate([n.id]);
+                          }}
+                          className="text-primary mt-1 inline-block text-xs hover:underline"
+                        >
+                          查看详情 →
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                  {!systemPayload && n.content && (
+                    <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">{n.content}</p>
+                  )}
                   <span className="text-muted-foreground text-xs">{timeAgo(n.createdAt)}</span>
                 </div>
                 {!read && (

@@ -115,6 +115,10 @@
 }
 
 @layer base {
+  /* 稳定滚动条占位：弹层（下拉菜单）锁定滚动时顶栏/页脚不再左右移动 */
+  html {
+    scrollbar-gutter: stable;
+  }
   * {
     @apply border-border outline-ring/50;
   }

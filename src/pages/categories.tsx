@@ -26,7 +26,7 @@ export function CategoriesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       <h1 className="mb-4 text-xl font-bold">全部分类</h1>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {(data?.categories ?? []).map((category) => (
           <Link key={category.id} to={`/categories/${category.slug}`}>
             <Card className="hover:border-primary/50 flex-row items-center gap-4 px-5 py-4 transition-colors">

@@ -12,12 +12,13 @@ function tagNames(tags: PostSummary['tags']): string[] {
 
 export function PostCard({ post }: { post: PostSummary }) {
   const tags = tagNames(post.tags);
+  const authorName = post.authorName ?? '匿名';
   return (
     <article className="hover:bg-accent/40 group flex gap-3 border-b px-4 py-3.5 transition-colors last:border-b-0">
-      <Link to={`/users/${post.authorName}`} className="shrink-0" aria-label={`${post.authorName} 的主页`}>
+      <Link to={`/users/${encodeURIComponent(authorName)}`} className="shrink-0" aria-label={`${authorName} 的主页`}>
         <Avatar className="size-9 border">
-          <AvatarImage src={post.authorAvatar ?? undefined} alt={post.authorName} />
-          <AvatarFallback>{post.authorName.slice(0, 1).toUpperCase()}</AvatarFallback>
+          <AvatarImage src={post.authorAvatar ?? undefined} alt={authorName} />
+          <AvatarFallback>{authorName.slice(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
       </Link>
 
@@ -49,8 +50,8 @@ export function PostCard({ post }: { post: PostSummary }) {
           <Link to={`/categories/${post.categorySlug}`} className="hover:text-foreground">
             {post.categoryName}
           </Link>
-          <Link to={`/users/${post.authorName}`} className="hover:text-foreground">
-            {post.authorName}
+          <Link to={`/users/${encodeURIComponent(authorName)}`} className="hover:text-foreground">
+            {authorName}
           </Link>
           <span>{timeAgo(post.lastReplyAt ?? post.createdAt)}</span>
           <span className="inline-flex items-center gap-1">

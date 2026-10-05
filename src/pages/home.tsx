@@ -44,8 +44,8 @@ export function HomePage() {
   const categories = categoriesData?.categories ?? [];
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[1fr_240px]">
-      <div>
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="min-w-0">
         {/* 排序 */}
         <div className="mb-4 flex items-center justify-between gap-2">
           <Tabs value={sort} onValueChange={(v) => setParams({ sort: v, page: 1 })}>
@@ -108,7 +108,7 @@ export function HomePage() {
       </div>
 
       {/* 桌面侧栏 */}
-      <aside className="hidden space-y-4 md:block">
+      <aside className="hidden min-w-0 space-y-4 md:block">
         <div className="bg-card rounded-xl border p-4">
           <h2 className="mb-3 text-sm font-semibold">分类</h2>
           <nav className="space-y-1">

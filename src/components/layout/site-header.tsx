@@ -5,6 +5,7 @@ import {
   Bell,
   Compass,
   Home,
+  Monitor,
   LogOut,
   Menu,
   Moon,
@@ -17,6 +18,7 @@ import {
   User,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,17 +35,33 @@ import {
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
+const THEME_ORDER = ['light', 'dark', 'system'] as const;
+const THEME_LABEL: Record<string, string> = { light: '浅色', dark: '深色', system: '跟随系统' };
+
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const next = () => {
+    const idx = THEME_ORDER.indexOf((theme ?? 'system') as (typeof THEME_ORDER)[number]);
+    const target = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+    setTheme(target);
+    toast.success(`主题：${THEME_LABEL[target]}`);
+  };
   return (
     <Button
       variant="ghost"
       size="icon"
-      aria-label="切换主题"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      aria-label={`切换主题（当前：${THEME_LABEL[theme ?? 'system']}）`}
+      title={`主题：${THEME_LABEL[theme ?? 'system']}（点击切换 浅色→深色→跟随系统）`}
+      onClick={next}
     >
-      <Sun className="size-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute size-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      {theme === 'system' ? (
+        <Monitor className="size-[1.2rem]" />
+      ) : (
+        <>
+          <Sun className="size-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute size-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+        </>
+      )}
     </Button>
   );
 }

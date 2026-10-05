@@ -42,12 +42,14 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   const doFetch = async (accessToken: string | undefined) => {
     const headers: Record<string, string> = {};
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    // FormData（multipart 上传）不能 JSON 序列化，Content-Type 由浏览器自动附带边界
+    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+    if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
     const res = await fetch(path, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isForm ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
       signal,
     });
     return res;

@@ -39,7 +39,8 @@ pnpm typecheck  # tsc -b
 - **认证状态**（`src/lib/auth.tsx`）：登录/注册/登出；Token 存 localStorage（`xc.access` / `xc.refresh`）
 - **Markdown**（`src/components/markdown.tsx`）：react-markdown + remark-gfm + rehype-highlight，**rehype-sanitize 白名单**（原始 HTML 永不渲染；`a` 仅 http/https/mailto，`img` 仅 http/https）
 - **shadcn/ui**：`src/components/ui/` 手写组件（stone 基色，indigo 品牌色），`cn()` 工具
-- **主题**：next-themes 深色模式 + `sonner` 提示 + TanStack Query v5 数据层
+- **主题**：next-themes 深色模式（`xc-theme` 持久化记忆 + 无闪烁初始化脚本，浅色/深色/跟随系统三态切换）+ `sonner` 提示 + TanStack Query v5 数据层
+- **布局稳定**：`html { scrollbar-gutter: stable }` 防止弹层打开时顶栏/页脚左右移动；移动端网格 `minmax(0,1fr)` 防止内容撑破屏幕
 - **安全头**：`public/_headers`（CSP 禁内联脚本，允许 challenges.cloudflare.com；/assets/* 一年不可变缓存）
 - **图片上传**：编辑器/回复框的「图片」按钮 → `/api/upload`（purpose=post/reply）→ 光标处插入 Markdown
 

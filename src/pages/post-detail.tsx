@@ -531,7 +531,7 @@ export function PostDetailPage() {
           </Button>
 
           {user && post.isAuthor && (
-            <div className="flex shrink-0 basis-full items-center justify-end gap-2 sm:ml-auto sm:basis-auto sm:justify-start">
+            <div className="flex shrink-0 basis-full items-center gap-2 sm:ml-auto sm:basis-auto">
               <Button variant="outline" size="sm" onClick={() => navigate(`/edit/${post.id}`)}>
                 <Pencil className="size-4" /> 编辑
               </Button>
@@ -556,7 +556,7 @@ export function PostDetailPage() {
           )}
 
           {user && !post.isAuthor && (
-            <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setReportOpen(true)}>
               <Flag className="size-4" /> 举报
             </Button>
           )}

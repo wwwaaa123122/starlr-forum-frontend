@@ -28,6 +28,12 @@ export function PostEditorPage() {
   const [categoryId, setCategoryId] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+
+  const { data: popularTags } = useQuery({
+    queryKey: ['popular-tags'],
+    queryFn: () => api<{ tags: { name: string; count: number }[] }>('/api/tags'),
+    staleTime: 5 * 60 * 1000,
+  });
   const [submitting, setSubmitting] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
@@ -78,22 +84,27 @@ export function PostEditorPage() {
   }, [loading, user, navigate]);
 
   const addTag = () => {
-    const name = tagInput.trim().replace(/^#/, '');
-    if (!name) return;
-    if (tags.includes(name)) {
-      setTagInput('');
-      return;
-    }
-    if (tags.length >= 5) {
-      toast.error('最多 5 个标签');
-      return;
-    }
-    if (name.length > 24) {
-      toast.error('标签最长 24 个字符');
-      return;
-    }
-    setTags([...tags, name]);
+    // 支持一次输入多个：逗号 / 顿号 / 空格分隔
+    const names = tagInput
+      .split(/[,，、\s]+/)
+      .map((t) => t.trim().replace(/^#/, ''))
+      .filter(Boolean);
     setTagInput('');
+    if (names.length === 0) return;
+    const next = [...tags];
+    for (const name of names) {
+      if (next.includes(name)) continue;
+      if (next.length >= 5) {
+        toast.error('最多 5 个标签');
+        break;
+      }
+      if (name.length > 24) {
+        toast.error(`「${name}」超过 24 个字符`);
+        continue;
+      }
+      next.push(name);
+    }
+    setTags(next);
   };
 
   const submit = async () => {
@@ -166,19 +177,22 @@ export function PostEditorPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tags">标签（最多 5 个，回车添加）</Label>
+            <Label htmlFor="tags">标签（最多 5 个）</Label>
             <Input
               id="tags"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' || e.key === ',') {
                   e.preventDefault();
                   addTag();
                 }
               }}
-              placeholder="cloudflare、react…"
+              placeholder="输入标签后回车添加，如 cloudflare、react"
             />
+            <p className="text-muted-foreground text-xs">
+              回车或逗号添加，可一次粘贴多个（用逗号分隔）；点击已添加的标签可删除
+            </p>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {tags.map((tag) => (
@@ -186,6 +200,30 @@ export function PostEditorPage() {
                     #{tag} ×
                   </Badge>
                 ))}
+              </div>
+            )}
+            {(popularTags?.tags ?? []).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-muted-foreground text-xs">热门：</span>
+                {(popularTags?.tags ?? [])
+                  .filter((t) => !tags.includes(t.name))
+                  .slice(0, 8)
+                  .map((t) => (
+                    <Badge
+                      key={t.name}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => {
+                        if (tags.length >= 5) {
+                          toast.error('最多 5 个标签');
+                          return;
+                        }
+                        setTags([...tags, t.name]);
+                      }}
+                    >
+                      #{t.name}
+                    </Badge>
+                  ))}
               </div>
             )}
           </div>

@@ -111,6 +111,9 @@ export interface AdminUser {
   createdAt: string;
   lastLoginAt: string | null;
   emailVerified?: number | boolean;
+  /** 当前生效禁言的到期时间（null/undefined = 永久禁言时也为 null，需配合 mutedPermanent） */
+  mutedUntil?: string | null;
+  mutedPermanent?: boolean;
 }
 
 export interface AdminPost {

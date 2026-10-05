@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, Eye, FileText, Flag, ImagePlus, Pencil, Plus, RotateCcw, ScrollText, Send, ShieldCheck, Trash2, TrendingUp, User, Users, X } from 'lucide-react';
+import { Ban, CheckCircle, Eye, FileText, Flag, ImagePlus, Mic, MicOff, Pencil, Plus, RotateCcw, ScrollText, Send, ShieldCheck, Trash2, TrendingUp, User, Users, X } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { formatNumber, timeAgo } from '@/lib/utils';
@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoryIcon } from '@/components/category-icon';
+import { PaginationControls } from '@/components/pagination-controls';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AdminPost, AdminStaff, AdminUser, AuditLogItem, Category, Pagination, ReportItem } from '@/lib/types';
@@ -134,15 +135,20 @@ function UsersTab() {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [banTarget, setBanTarget] = useState<AdminUser | null>(null);
   const [banReason, setBanReason] = useState('');
   const [banDays, setBanDays] = useState('7');
+  const [muteTarget, setMuteTarget] = useState<AdminUser | null>(null);
+  const [muteReason, setMuteReason] = useState('');
+  const [muteDuration, setMuteDuration] = useState('7');
+  const [customDays, setCustomDays] = useState('3');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'users', query],
+    queryKey: ['admin', 'users', query, page],
     queryFn: () =>
       api<{ users: AdminUser[]; pagination: Pagination }>(
-        `/api/admin/users?page=1&pageSize=30${query ? `&query=${encodeURIComponent(query)}` : ''}`,
+        `/api/admin/users?page=${page}&pageSize=20${query ? `&query=${encodeURIComponent(query)}` : ''}`,
       ),
   });
 
@@ -157,6 +163,34 @@ function UsersTab() {
     },
     onError: (e) => toast.error(errMsg(e)),
   });
+
+  const muteDaysValue = (): number | null => {
+    if (muteDuration === 'permanent') return null;
+    if (muteDuration === 'custom') {
+      const n = Number.parseInt(customDays, 10);
+      return Number.isFinite(n) && n > 0 ? Math.min(n, 3650) : 1;
+    }
+    return Number(muteDuration);
+  };
+
+  const muteUser = async () => {
+    if (!muteTarget || !muteReason.trim()) {
+      toast.error('请填写禁言原因');
+      return;
+    }
+    try {
+      await api(`/api/admin/users/${muteTarget.id}/mute`, {
+        method: 'POST',
+        body: { reason: muteReason, days: muteDaysValue() },
+      });
+      toast.success('已禁言');
+      setMuteTarget(null);
+      setMuteReason('');
+      refresh();
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
 
   const banUser = async () => {
     if (!banTarget || !banReason.trim()) {
@@ -243,10 +277,14 @@ function UsersTab() {
                   <TableCell>
                     {u.status === 'banned' ? (
                       <Badge variant="destructive">已封禁</Badge>
-                    ) : u.emailVerified === 0 || u.emailVerified === false ? (
+                    ) : !u.emailVerified ? (
                       <Badge variant="outline" className="border-amber-500/60 text-amber-600 dark:text-amber-400">
                         未验证
                       </Badge>
+                    ) : u.mutedUntil || u.mutedPermanent ? (
+                      <Badge variant="warning">禁言中</Badge>
+                    ) : !u.emailVerified ? (
+                      <Badge variant="secondary">未验证</Badge>
                     ) : (
                       <Badge variant="success">正常</Badge>
                     )}
@@ -278,35 +316,20 @@ function UsersTab() {
                             <CheckCircle className="size-3.5" /> 激活
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const reason = window.prompt('禁言原因：');
-                            if (!reason) return;
-                            void api(`/api/admin/users/${u.id}/mute`, { method: 'POST', body: { reason, days: 7 } }).then(
-                              () => {
-                                toast.success('已禁言 7 天');
-                                refresh();
-                              },
-                              (e) => toast.error(errMsg(e)),
-                            );
-                          }}
-                        >
-                          禁言
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            void api(`/api/admin/users/${u.id}/unmute`, { method: 'POST' }).then(() => {
-                              toast.success('已解除禁言');
-                              refresh();
-                            }, (e) => toast.error(errMsg(e)))
-                          }
-                        >
-                          解禁言
-                        </Button>
+                        {u.mutedUntil || u.mutedPermanent ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title={u.mutedPermanent ? '永久禁言' : `禁言至 ${u.mutedUntil!.replace('T', ' ').slice(0, 16)}`}
+                            onClick={() => mutation.mutate({ path: `users/${u.id}/unmute` })}
+                          >
+                            <Mic className="size-3.5" /> 解除禁言
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" onClick={() => setMuteTarget(u)} disabled={u.role === 'admin'}>
+                            <MicOff className="size-3.5" /> 禁言
+                          </Button>
+                        )}
                       </div>
                     )}
                   </TableCell>
@@ -316,6 +339,7 @@ function UsersTab() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls pagination={data?.pagination} onPageChange={(p) => setPage(p)} />
 
       <Dialog open={Boolean(banTarget)} onOpenChange={(v) => !v && setBanTarget(null)}>
         <DialogContent>
@@ -350,6 +374,57 @@ function UsersTab() {
             <Button variant="destructive" onClick={() => void banUser()}>
               封禁
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(muteTarget)} onOpenChange={(v) => !v && setMuteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>禁言用户 {muteTarget?.username}</DialogTitle>
+            <DialogDescription>禁言期间该用户不能发布帖子、回复或评论。</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>原因</Label>
+              <Textarea value={muteReason} onChange={(e) => setMuteReason(e.target.value)} rows={2} placeholder="例如：恶意灌水" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>时长</Label>
+              <Select value={muteDuration} onValueChange={setMuteDuration}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 天</SelectItem>
+                  <SelectItem value="3">3 天</SelectItem>
+                  <SelectItem value="7">7 天</SelectItem>
+                  <SelectItem value="30">30 天</SelectItem>
+                  <SelectItem value="90">90 天</SelectItem>
+                  <SelectItem value="custom">自定义…</SelectItem>
+                  <SelectItem value="permanent">永久</SelectItem>
+                </SelectContent>
+              </Select>
+              {muteDuration === 'custom' && (
+                <div className="flex items-center gap-2 pt-1">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-24"
+                  />
+                  <span className="text-muted-foreground text-sm">天（1–3650）</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMuteTarget(null)}>
+              取消
+            </Button>
+            <Button onClick={() => void muteUser()}>确认禁言</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -15,6 +15,8 @@ import {
   Sparkles,
   Sun,
   User,
+  Heart,
+  Star,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -224,6 +226,12 @@ export function SiteHeader() {
                   <div className="text-muted-foreground text-xs font-normal">@{user.username}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/me/likes')}>
+                  <Heart className="size-4" /> 我的点赞
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/me/favorites')}>
+                  <Star className="size-4" /> 我的收藏
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate(`/users/${user.username}`)}>
                   <User className="size-4" /> 我的主页
                 </DropdownMenuItem>

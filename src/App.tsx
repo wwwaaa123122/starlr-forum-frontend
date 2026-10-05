@@ -14,6 +14,7 @@ import { SettingsPage } from '@/pages/settings';
 import { SearchPage } from '@/pages/search';
 import { AdminPage } from '@/pages/admin';
 import { NotFoundPage } from '@/pages/not-found';
+import { MyFavoritesPage, MyLikesPage } from '@/pages/my-lists';
 import { UnverifiedBanner, VerifyEmailPage } from '@/pages/verify-email';
 
 export default function App() {
@@ -33,6 +34,8 @@ export default function App() {
           <Route path="/users/:username" element={<UserPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/me/likes" element={<MyLikesPage />} />
+          <Route path="/me/favorites" element={<MyFavoritesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -5,6 +5,7 @@ import { ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Turnstile, fetchSiteConfig } from '@/components/turnstile';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,7 @@ export function RegisterPage() {
   const { register, user } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,6 +33,10 @@ export function RegisterPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreed) {
+      toast.error('请先阅读并同意《用户协议》与《隐私政策》');
+      return;
+    }
     if (password !== confirm) {
       toast.error('两次输入的密码不一致');
       return;
@@ -119,6 +125,16 @@ export function RegisterPage() {
               />
             </div>
             <Turnstile siteKey={siteKey} onToken={setTurnstileToken} />
+              <label className="flex items-center gap-3 text-xs leading-relaxed">
+                <Switch checked={agreed} onCheckedChange={setAgreed} aria-label="同意用户协议与隐私政策" />
+                <span className="text-muted-foreground">
+                  我已阅读并同意
+                  <a href="/terms" target="_blank" className="text-primary hover:underline">《用户协议》</a>
+                  与
+                  <a href="/privacy" target="_blank" className="text-primary hover:underline">《隐私政策》</a>
+                </span>
+              </label>
+
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? '注册中…' : '注册'}
             </Button>

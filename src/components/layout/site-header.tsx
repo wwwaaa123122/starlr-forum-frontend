@@ -19,6 +19,8 @@ import {
   Star,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { Cookie } from 'lucide-react';
+import { openCookieSettings } from '@/lib/consent';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -296,9 +298,16 @@ export function SiteFooter() {
     <footer className="safe-bottom border-t">
       <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center gap-1.5 px-4 py-6 text-xs sm:flex-row sm:justify-between">
         <span>© {new Date().getFullYear()} Starlr Forum</span>
-        <span className="flex items-center gap-2">
-          <Sparkles className="text-primary size-3.5" />
-          运行在 Cloudflare 边缘网络上
+        <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <a href="/terms" className="hover:text-foreground hover:underline">用户协议</a>
+          <a href="/privacy" className="hover:text-foreground hover:underline">隐私政策</a>
+          <button type="button" onClick={() => openCookieSettings()} className="inline-flex items-center gap-1 hover:text-foreground hover:underline">
+            <Cookie className="size-3" /> Cookie 设置
+          </button>
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles className="text-primary size-3.5" />
+            运行在 Cloudflare 边缘网络上
+          </span>
         </span>
       </div>
     </footer>

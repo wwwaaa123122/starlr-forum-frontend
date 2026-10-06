@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { SiteFooter, SiteHeader } from '@/components/layout/site-header';
+import { CookieConsent } from '@/components/cookie-consent';
+import { initConsent } from '@/lib/consent';
 import { HomePage } from '@/pages/home';
 import { CategoriesPage } from '@/pages/categories';
 import { PostDetailPage } from '@/pages/post-detail';
@@ -14,10 +16,12 @@ import { SettingsPage } from '@/pages/settings';
 import { SearchPage } from '@/pages/search';
 import { AdminPage } from '@/pages/admin';
 import { NotFoundPage } from '@/pages/not-found';
+import { PrivacyPage, TermsPage } from '@/pages/legal';
 import { MyFavoritesPage, MyLikesPage } from '@/pages/my-lists';
 import { UnverifiedBanner, VerifyEmailPage } from '@/pages/verify-email';
 
 export default function App() {
+  initConsent();
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
@@ -42,11 +46,14 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <SiteFooter />
+      <CookieConsent />
     </div>
   );
 }

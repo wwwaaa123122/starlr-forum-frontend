@@ -212,6 +212,39 @@ function UsersTab() {
     }
   };
 
+  const [modTarget, setModTarget] = useState<AdminUser | null>(null);
+  const [pickedCats, setPickedCats] = useState<string[]>([]);
+  const [granting, setGranting] = useState(false);
+  const { data: catsForMod } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api<{ categories: Category[] }>('/api/categories'),
+    enabled: Boolean(modTarget),
+  });
+  const toggleCat = (id: string) =>
+    setPickedCats((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const grantModerator = async () => {
+    if (!modTarget) return;
+    if (pickedCats.length === 0) {
+      toast.error('请至少选择一个版块');
+      return;
+    }
+    setGranting(true);
+    try {
+      await api(`/api/admin/users/${modTarget.id}/role`, { method: 'PATCH', body: { role: 'moderator' } });
+      for (const cid of pickedCats) {
+        await api('/api/admin/moderators', { method: 'POST', body: { username: modTarget.username, categoryId: cid } });
+      }
+      toast.success(`已任命 @${modTarget.username} 为 ${pickedCats.length} 个版块的版主`);
+      setModTarget(null);
+      setPickedCats([]);
+      refresh();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setGranting(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <Input
@@ -253,9 +286,16 @@ function UsersTab() {
                         value={u.role}
                         onValueChange={(role) => {
                           if (role === u.role) return;
-                          void api(`/api/admin/users/${u.id}/role`, { method: 'PATCH', body: { role } }).then(
-                            () => {
-                              toast.success('角色已更新');
+                          if (role === 'moderator') {
+                            setModTarget(u);
+                            return;
+                          }
+                          void api<{ scopeCleared?: boolean }>(`/api/admin/users/${u.id}/role`, {
+                            method: 'PATCH',
+                            body: { role },
+                          }).then(
+                            (res) => {
+                              toast.success(res.scopeCleared ? '已改为普通用户，辖区任命一并清空' : '角色已更新');
                               refresh();
                             },
                             (e) => toast.error(errMsg(e)),
@@ -426,6 +466,36 @@ function UsersTab() {
               取消
             </Button>
             <Button onClick={() => void muteUser()}>确认禁言</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={Boolean(modTarget)} onOpenChange={(v) => !v && setModTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>授予 @{modTarget?.username} 版主权限</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2">
+            {(catsForMod?.categories ?? []).map((cat) => {
+              const picked = pickedCats.includes(cat.id);
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => toggleCat(cat.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                >
+                  {cat.icon} {cat.name}
+                </button>
+              );
+            })}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setModTarget(null)}>
+              取消
+            </Button>
+            <Button onClick={() => void grantModerator()} disabled={granting || pickedCats.length === 0}>
+              确认授予
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -950,7 +1020,7 @@ interface ModeratorRow {
 function ModeratorsTab() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
-  const [categoryId, setCategoryId] = useState('');
+  const [pickedCats, setPickedCats] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const { data: mods } = useQuery({
     queryKey: ['admin', 'moderators'],
@@ -962,20 +1032,26 @@ function ModeratorsTab() {
   });
   const categories = catsData?.categories ?? [];
 
+  const toggleCat = (id: string) =>
+    setPickedCats((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const assign = async () => {
-    if (!username.trim() || !categoryId) {
+    if (!username.trim() || pickedCats.length === 0) {
       toast.error('请填写用户名并选择版块');
       return;
     }
     setBusy(true);
     try {
-      const res = await api<{ upgraded?: boolean }>('/api/admin/moderators', {
-        method: 'POST',
-        body: { username: username.trim(), categoryId },
-      });
-      toast.success(res.upgraded ? '已任命并升级为版主' : '已添加该版块的版主任命');
+      let upgraded = false;
+      for (const cid of pickedCats) {
+        const res = await api<{ upgraded?: boolean }>('/api/admin/moderators', {
+          method: 'POST',
+          body: { username: username.trim(), categoryId: cid },
+        });
+        upgraded = upgraded || Boolean(res.upgraded);
+      }
+      toast.success(upgraded ? `已任命为 ${pickedCats.length} 个版块的版主（角色已升级）` : `已添加 ${pickedCats.length} 个版块的版主任命`);
       setUsername('');
-      setCategoryId('');
+      setPickedCats([]);
       void queryClient.invalidateQueries({ queryKey: ['admin', 'moderators'] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '操作失败');
@@ -996,23 +1072,28 @@ function ModeratorsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card grid gap-2 rounded-xl border p-4 sm:grid-cols-[1fr_1fr_auto]">
-        <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名或 UID" />
-        <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger>
-            <SelectValue placeholder="选择版块" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button onClick={() => void assign()} disabled={busy}>
-          任命
-        </Button>
+      <div className="bg-card space-y-3 rounded-xl border p-4">
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名或 UID" />
+          <Button onClick={() => void assign()} disabled={busy || pickedCats.length === 0}>
+            任命（{pickedCats.length}）
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((cat) => {
+            const picked = pickedCats.includes(cat.id);
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => toggleCat(cat.id)}
+                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+              >
+                {cat.icon} {cat.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="bg-card overflow-x-auto rounded-xl border">

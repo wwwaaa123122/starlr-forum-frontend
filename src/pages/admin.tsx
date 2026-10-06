@@ -1213,9 +1213,6 @@ function ViewsTab() {
             </TableBody>
           </Table>
         </div>
-        <p className="text-muted-foreground mt-2 text-xs">
-          记录保留 30 天；同一访客对同一帖子每小时只计一次。第三方全站统计（Umami）已另行接入。
-        </p>
       </div>
     </div>
   );

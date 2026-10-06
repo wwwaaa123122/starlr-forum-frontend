@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Cookie } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { getConsent, setConsent, openCookieSettings, type CookieConsent } from '@/lib/consent';
@@ -37,7 +37,7 @@ export function CookieConsent() {
     setConsentState({ analytics: allowAnalytics, ts: Date.now() });
     setBannerOpen(false);
     setDialogOpen(false);
-    toast.success(allowAnalytics ? '已保存 Cookie 偏好：包含统计分析' : '已保存 Cookie 偏好：仅必要 Cookie');
+    toast.success('已保存');
   };
 
   return (
@@ -49,21 +49,6 @@ export function CookieConsent() {
               <Cookie className="text-muted-foreground mt-0.5 size-4 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">我们使用 Cookie 与本地存储</p>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                  必要类用于登录状态与安全（始终开启）；统计类用于匿名访问分析（
-                  <a href="https://umami.xc-lr.cn" target="_blank" rel="noreferrer" className="hover:underline">
-                    Umami
-                  </a>
-                  ，自托管、无广告追踪）。详见
-                  <a href="/privacy" className="text-primary hover:underline">
-                    隐私政策
-                  </a>
-                  与
-                  <a href="/terms" className="text-primary hover:underline">
-                    用户协议
-                  </a>
-                  。
-                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => accept(true)}>
                     全部接受
@@ -85,26 +70,17 @@ export function CookieConsent() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Cookie 设置</DialogTitle>
-            <DialogDescription>控制哪些 Cookie 与本地存储可以在你的设备上使用。</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-1">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Label className="text-sm">必要（始终开启）</Label>
-                <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
-                  登录会话（xc.access / xc.refresh）、安全校验与偏好设置。没有它们网站无法正常使用。
-                </p>
               </div>
               <Switch checked disabled aria-label="必要 Cookie 始终开启" />
             </div>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <Label htmlFor="consent-analytics" className="text-sm">
-                  统计分析
-                </Label>
-                <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
-                  匿名访问统计（页面浏览、来源、设备），帮助我们改进网站。自托管 Umami，不与广告网络共享。
-                </p>
+                <Label htmlFor="consent-analytics" className="text-sm">统计分析</Label>
               </div>
               <Switch id="consent-analytics" checked={analytics} onCheckedChange={setAnalytics} />
             </div>

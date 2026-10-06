@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Camera, KeyRound, Laptop, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Upload } from 'lucide-react';
 import { api, ApiClientError, getStoredRefreshToken } from '@/lib/api';
+import { compressImage } from '@/lib/image-compress';
 import { useAuth } from '@/lib/auth';
 import { timeAgo } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -106,9 +107,10 @@ export function SettingsPage() {
     }
   };
 
-  const uploadAvatar = async (file: File) => {
+  const uploadAvatar = async (raw: File) => {
     setUploading(true);
     try {
+      const { file } = await compressImage(raw);
       const form = new FormData();
       form.append('file', file);
       form.append('purpose', 'avatar');

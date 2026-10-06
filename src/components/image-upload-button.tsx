@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, ApiClientError } from '@/lib/api';
+import { compressImage, formatSize } from '@/lib/image-compress';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -32,13 +33,9 @@ export function ImageUploadButton({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) {
+  async function handleFile(original: File) {
+    if (!original.type.startsWith('image/')) {
       toast.error('仅支持 JPG/PNG/GIF/WEBP 图片');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('图片不能超过 5MB');
       return;
     }
     const current = getValue();
@@ -48,12 +45,21 @@ export function ImageUploadButton({
     }
     setUploading(true);
     try {
+      // 上传前浏览器本地压缩：长边超 1920 缩放，JPEG 重编码，PNG 无损缩放
+      const { file, compressed, originalSize } = await compressImage(original);
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('图片压缩后仍超过 5MB，请更换图片');
+        return;
+      }
       const form = new FormData();
       form.append('file', file);
       form.append('purpose', purpose);
       const res = await api<UploadResponse>('/api/upload', { method: 'POST', body: form });
       const alt = file.name.replace(/\.[a-z0-9]+$/i, '').slice(0, 30) || '图片';
       insertMarkdown(`![${alt}](${res.url})`);
+      if (compressed) {
+        toast.success(`已自动压缩：${formatSize(originalSize)} → ${formatSize(file.size)}`);
+      }
       if (typeof res.quotaRemaining === 'number' && res.quotaRemaining <= 5) {
         toast.warning(`今日剩余上传配额：${res.quotaRemaining} 张`);
       }

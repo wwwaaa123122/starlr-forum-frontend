@@ -1050,6 +1050,7 @@ interface ModeratorRow {
   userId: string;
   categoryId: string;
   createdAt: string;
+  uid: number;
   username: string;
   nickname: string;
   categoryName: string;
@@ -1058,6 +1059,7 @@ interface ModeratorRow {
 
 interface SiteWideModerator {
   userId: string;
+  uid: number;
   username: string;
   nickname: string;
   createdAt: string;
@@ -1183,7 +1185,7 @@ function ModeratorsTab() {
                     </Link>
                     <span className="text-muted-foreground ml-2 text-xs">@{sw.username}</span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{sw.userId}</TableCell>
+                  <TableCell className="font-mono text-xs">{sw.uid}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{sw.createdAt}</TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -1236,7 +1238,7 @@ function ModeratorsTab() {
                     </Link>
                     <span className="text-muted-foreground ml-2 text-xs">@{row.username}</span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{row.userId}</TableCell>
+                  <TableCell className="font-mono text-xs">{row.uid}</TableCell>
                   <TableCell className="whitespace-nowrap">{row.categoryName}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{row.createdAt}</TableCell>
                   <TableCell className="text-right">

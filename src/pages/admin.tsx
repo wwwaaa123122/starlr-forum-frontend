@@ -231,10 +231,15 @@ function UsersTab() {
     setGranting(true);
     try {
       await api(`/api/admin/users/${modTarget.id}/role`, { method: 'PATCH', body: { role: 'moderator' } });
-      for (const cid of pickedCats) {
-        await api('/api/admin/moderators', { method: 'POST', body: { username: modTarget.username, categoryId: cid } });
+      if (pickedCats.includes(SITE_WIDE)) {
+        await api('/api/admin/moderators', { method: 'POST', body: { username: modTarget.username, siteWide: true } });
+        toast.success(`已将 @${modTarget.username} 设为全站版主`);
+      } else {
+        for (const cid of pickedCats) {
+          await api('/api/admin/moderators', { method: 'POST', body: { username: modTarget.username, categoryId: cid } });
+        }
+        toast.success(`已任命 @${modTarget.username} 为 ${pickedCats.length} 个版块的版主`);
       }
-      toast.success(`已任命 @${modTarget.username} 为 ${pickedCats.length} 个版块的版主`);
       setModTarget(null);
       setPickedCats([]);
       refresh();
@@ -475,19 +480,30 @@ function UsersTab() {
             <DialogTitle>授予 @{modTarget?.username} 版主权限</DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap gap-2">
-            {(catsForMod?.categories ?? []).map((cat) => {
-              const picked = pickedCats.includes(cat.id);
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => toggleCat(cat.id)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
-                >
-                  {cat.icon} {cat.name}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() =>
+                setPickedCats((prev) => (prev.includes(SITE_WIDE) ? prev.filter((x) => x !== SITE_WIDE) : [SITE_WIDE]))
+              }
+              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${pickedCats.includes(SITE_WIDE) ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+            >
+              🌐 全站管辖
+            </button>
+            {pickedCats.includes(SITE_WIDE)
+              ? null
+              : (catsForMod?.categories ?? []).map((cat) => {
+                  const picked = pickedCats.includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => toggleCat(cat.id)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                    >
+                      {cat.icon} {cat.name}
+                    </button>
+                  );
+                })}
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setModTarget(null)}>
@@ -1040,6 +1056,16 @@ interface ModeratorRow {
   categorySlug: string;
 }
 
+interface SiteWideModerator {
+  userId: string;
+  username: string;
+  nickname: string;
+  createdAt: string;
+}
+
+/** 全站管辖的特殊标记值（不与真实版块 id 冲突） */
+const SITE_WIDE = '__site_wide__';
+
 function ModeratorsTab() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
@@ -1047,7 +1073,7 @@ function ModeratorsTab() {
   const [busy, setBusy] = useState(false);
   const { data: mods } = useQuery({
     queryKey: ['admin', 'moderators'],
-    queryFn: () => api<{ moderators: ModeratorRow[] }>('/api/admin/moderators'),
+    queryFn: () => api<{ moderators: ModeratorRow[]; siteWide: SiteWideModerator[] }>('/api/admin/moderators'),
   });
   const { data: catsData } = useQuery({
     queryKey: ['categories'],
@@ -1065,14 +1091,23 @@ function ModeratorsTab() {
     setBusy(true);
     try {
       let upgraded = false;
-      for (const cid of pickedCats) {
+      if (pickedCats.includes(SITE_WIDE)) {
         const res = await api<{ upgraded?: boolean }>('/api/admin/moderators', {
           method: 'POST',
-          body: { username: username.trim(), categoryId: cid },
+          body: { username: username.trim(), siteWide: true },
         });
-        upgraded = upgraded || Boolean(res.upgraded);
+        upgraded = Boolean(res.upgraded);
+        toast.success(upgraded ? '已任命为全站版主（角色已升级）' : '已设为全站版主');
+      } else {
+        for (const cid of pickedCats) {
+          const res = await api<{ upgraded?: boolean }>('/api/admin/moderators', {
+            method: 'POST',
+            body: { username: username.trim(), categoryId: cid },
+          });
+          upgraded = upgraded || Boolean(res.upgraded);
+        }
+        toast.success(upgraded ? `已任命为 ${pickedCats.length} 个版块的版主（角色已升级）` : `已添加 ${pickedCats.length} 个版块的版主任命`);
       }
-      toast.success(upgraded ? `已任命为 ${pickedCats.length} 个版块的版主（角色已升级）` : `已添加 ${pickedCats.length} 个版块的版主任命`);
       setUsername('');
       setPickedCats([]);
       void queryClient.invalidateQueries({ queryKey: ['admin', 'moderators'] });
@@ -1099,25 +1134,80 @@ function ModeratorsTab() {
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名或 UID" />
           <Button onClick={() => void assign()} disabled={busy || pickedCats.length === 0}>
-            任命（{pickedCats.length}）
+            任命（{pickedCats.includes(SITE_WIDE) ? '全站' : pickedCats.length}）
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
-            const picked = pickedCats.includes(cat.id);
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => toggleCat(cat.id)}
-                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
-              >
-                {cat.icon} {cat.name}
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => setPickedCats((prev) => (prev.includes(SITE_WIDE) ? prev.filter((x) => x !== SITE_WIDE) : [SITE_WIDE]))}
+            className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${pickedCats.includes(SITE_WIDE) ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+          >
+            🌐 全站管辖
+          </button>
+          {pickedCats.includes(SITE_WIDE)
+            ? null
+            : categories.map((cat) => {
+                const picked = pickedCats.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCat(cat.id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                  >
+                    {cat.icon} {cat.name}
+                  </button>
+                );
+              })}
         </div>
       </div>
+
+      {(mods?.siteWide ?? []).length > 0 && (
+        <div className="bg-card overflow-x-auto rounded-xl border">
+          <Table className="min-w-[640px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">全站版主</TableHead>
+                <TableHead>UID</TableHead>
+                <TableHead className="whitespace-nowrap">任命时间</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(mods?.siteWide ?? []).map((sw) => (
+                <TableRow key={sw.userId}>
+                  <TableCell className="whitespace-nowrap">
+                    <Link to={`/users/${sw.username}`} className="hover:underline">
+                      {sw.nickname || sw.username}
+                    </Link>
+                    <span className="text-muted-foreground ml-2 text-xs">@{sw.username}</span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{sw.userId}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{sw.createdAt}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await api(`/api/admin/moderators/${sw.userId}`, { method: 'DELETE' });
+                          toast.success('已撤销该用户全部版主权限');
+                          void queryClient.invalidateQueries({ queryKey: ['admin', 'moderators'] });
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : '操作失败');
+                        }
+                      }}
+                    >
+                      撤销全部
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <div className="bg-card overflow-x-auto rounded-xl border">
         <Table className="min-w-[640px]">

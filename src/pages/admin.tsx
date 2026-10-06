@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CategoryIcon } from '@/components/category-icon';
 import { PaginationControls } from '@/components/pagination-controls';
 import { Textarea } from '@/components/ui/textarea';
@@ -657,10 +658,14 @@ function CategoriesTab() {
     }
   };
 
-  const remove = async (id: string) => {
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+
+  const remove = async () => {
+    if (!deleteTarget) return;
     try {
-      await api(`/api/admin/categories/${id}`, { method: 'DELETE' });
+      await api(`/api/admin/categories/${deleteTarget.id}`, { method: 'DELETE' });
       toast.success('分类已删除');
+      setDeleteTarget(null);
       refresh();
     } catch (e) {
       toast.error(errMsg(e));
@@ -713,7 +718,7 @@ function CategoriesTab() {
                         >
                           <Pencil className="size-3.5" /> 编辑
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => void remove(c.id)}>
+                        <Button variant="outline" size="sm" onClick={() => setDeleteTarget(c)}>
                           <Trash2 className="size-3.5" /> 删除
                         </Button>
                       </div>
@@ -747,9 +752,24 @@ function CategoriesTab() {
         </div>
       )}
 
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除分类「{deleteTarget?.name}」？</AlertDialogTitle>
+            <AlertDialogDescription>
+              该分类下有 {deleteTarget?.postCount ?? 0} 篇帖子。删除后帖子不会被删除，但需要重新选择分类才能编辑。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void remove()}>确认删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 // ---------------- 举报管理 ----------------
 function ReportsTab() {

@@ -83,16 +83,27 @@ export function VerifyEmailPage() {
 export function UnverifiedBanner() {
   const { user } = useAuth();
   const [sending, setSending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   if (!user || user.accountStatus !== 'unverified') return null;
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((v) => Math.max(0, v - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
 
   const resend = async () => {
     setSending(true);
     try {
-      const res = await api<{ sent: boolean; alreadyVerified?: boolean }>('/api/auth/resend-verification', {
-        method: 'POST',
-      });
+      const res = await api<{ sent: boolean; alreadyVerified?: boolean; cooldown?: number }>(
+        '/api/auth/resend-verification',
+        { method: 'POST' },
+      );
       if (res.alreadyVerified) toast.success('账号已验证');
-      else toast.success('验证邮件已发送，请查收（注意垃圾箱）');
+      else {
+        toast.success('验证邮件已发送，请查收');
+        setCooldown(res.cooldown ?? 60);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '发送失败，请稍后再试');
     } finally {
@@ -106,8 +117,13 @@ export function UnverifiedBanner() {
         <span>
           <strong>邮箱未验证</strong>：你可以浏览内容，但发帖、回复与上传需要先激活账号。
         </span>
-        <Button size="sm" variant="outline" disabled={sending} onClick={() => void resend()}>
-          {sending ? '发送中…' : '重新发送验证邮件'}
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={sending || cooldown > 0}
+          onClick={() => void resend()}
+        >
+          {sending ? '发送中…' : cooldown > 0 ? `重新发送（${cooldown}s）` : '重新发送验证邮件'}
         </Button>
       </div>
     </div>

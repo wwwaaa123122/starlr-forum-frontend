@@ -742,9 +742,32 @@ function CategoriesTab() {
     }
   };
 
+  const [restoring, setRestoring] = useState(false);
+
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border">
+        <div className="flex justify-end px-4 pt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={restoring}
+            onClick={async () => {
+              setRestoring(true);
+              try {
+                const res = await api<{ restored: string[] }>('/api/admin/categories/restore-defaults', { method: 'POST' });
+                toast.success(res.restored.length ? `已恢复：${res.restored.join('、')}` : '默认分类完整，无需恢复');
+                refresh();
+              } catch (e) {
+                toast.error(errMsg(e));
+              } finally {
+                setRestoring(false);
+              }
+            }}
+          >
+            <RotateCcw className="size-3.5" /> 恢复默认分类
+          </Button>
+        </div>
         <Table className="min-w-[520px]">
           <TableHeader>
             <TableRow>
@@ -1148,6 +1171,13 @@ function AdminsTab() {
   const [uid, setUid] = useState('');
   const [role, setRole] = useState<'admin' | 'moderator'>('admin');
   const [submitting, setSubmitting] = useState(false);
+  const [adminPickedCats, setAdminPickedCats] = useState<string[]>([]);
+  const { data: catsForAdmin } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api<{ categories: Category[] }>('/api/categories'),
+  });
+  const toggleAdminCat = (id: string) =>
+    setAdminPickedCats((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'admins'],
@@ -1225,6 +1255,23 @@ function AdminsTab() {
               </SelectContent>
             </Select>
           </div>
+                    {role === 'moderator' && (
+                      <div className="flex w-full flex-wrap gap-2">
+                        {(catsForAdmin?.categories ?? []).map((cat) => {
+                          const picked = adminPickedCats.includes(cat.id);
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => toggleAdminCat(cat.id)}
+                              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                            >
+                              {cat.icon} {cat.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
           <Button onClick={() => void grant()} disabled={submitting || !uid}>
             <ShieldCheck className="size-4" /> {submitting ? '授权中…' : '授权'}
           </Button>
@@ -1620,6 +1667,11 @@ export function AdminPage() {
         {isAdmin && (
           <TabsContent value="notify">
             <NotificationsTab />
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="moderators">
+            <ModeratorsTab />
           </TabsContent>
         )}
         {isAdmin && (

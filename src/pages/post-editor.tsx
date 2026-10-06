@@ -167,11 +167,14 @@ export function PostEditorPage() {
                 <SelectValue placeholder="选择分类" />
               </SelectTrigger>
               <SelectContent>
-                {(categoriesData?.categories ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
+                {(categoriesData?.categories ?? []).map((c) => {
+                  const staffOnly = c.postPolicy === 'staff' && !['moderator', 'admin'].includes(user?.role ?? '');
+                  return (
+                  <SelectItem key={c.id} value={c.id} disabled={staffOnly}>
                     {c.icon} {c.name}
                   </SelectItem>
-                ))}
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

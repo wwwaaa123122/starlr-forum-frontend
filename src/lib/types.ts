@@ -16,6 +16,8 @@ export interface Category {
   icon: string;
   sortOrder: number;
   postCount: number;
+  /** 发布权限：everyone = 所有用户；staff = 仅版主及以上 */
+  postPolicy: 'everyone' | 'staff';
 }
 
 export interface PostSummary {

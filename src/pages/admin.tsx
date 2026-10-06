@@ -936,6 +936,130 @@ function ReportsTab() {
 }
 
 
+// ---------------- 版主管理（按版块授权） ----------------
+interface ModeratorRow {
+  userId: string;
+  categoryId: string;
+  createdAt: string;
+  username: string;
+  nickname: string;
+  categoryName: string;
+  categorySlug: string;
+}
+
+function ModeratorsTab() {
+  const queryClient = useQueryClient();
+  const [username, setUsername] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const { data: mods } = useQuery({
+    queryKey: ['admin', 'moderators'],
+    queryFn: () => api<{ moderators: ModeratorRow[] }>('/api/admin/moderators'),
+  });
+  const { data: catsData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api<{ categories: Category[] }>('/api/categories'),
+  });
+  const categories = catsData?.categories ?? [];
+
+  const assign = async () => {
+    if (!username.trim() || !categoryId) {
+      toast.error('请填写用户名并选择版块');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await api<{ upgraded?: boolean }>('/api/admin/moderators', {
+        method: 'POST',
+        body: { username: username.trim(), categoryId },
+      });
+      toast.success(res.upgraded ? '已任命并升级为版主' : '已添加该版块的版主任命');
+      setUsername('');
+      setCategoryId('');
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'moderators'] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '操作失败');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (row: ModeratorRow) => {
+    try {
+      await api(`/api/admin/moderators/${row.userId}/${row.categoryId}`, { method: 'DELETE' });
+      toast.success('已移除该版块的版主任命');
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'moderators'] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '操作失败');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-card grid gap-2 rounded-xl border p-4 sm:grid-cols-[1fr_1fr_auto]">
+        <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名或 UID" />
+        <Select value={categoryId} onValueChange={setCategoryId}>
+          <SelectTrigger>
+            <SelectValue placeholder="选择版块" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={() => void assign()} disabled={busy}>
+          任命
+        </Button>
+      </div>
+
+      <div className="bg-card overflow-x-auto rounded-xl border">
+        <Table className="min-w-[640px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="whitespace-nowrap">版主</TableHead>
+              <TableHead>UID</TableHead>
+              <TableHead>版块</TableHead>
+              <TableHead className="whitespace-nowrap">任命时间</TableHead>
+              <TableHead className="text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(mods?.moderators ?? []).length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-muted-foreground text-center text-xs">
+                  暂无版主任命
+                </TableCell>
+              </TableRow>
+            ) : (
+              (mods?.moderators ?? []).map((row) => (
+                <TableRow key={`${row.userId}-${row.categoryId}`}>
+                  <TableCell className="whitespace-nowrap">
+                    <Link to={`/users/${row.username}`} className="hover:underline">
+                      {row.nickname || row.username}
+                    </Link>
+                    <span className="text-muted-foreground ml-2 text-xs">@{row.username}</span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{row.userId}</TableCell>
+                  <TableCell className="whitespace-nowrap">{row.categoryName}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{row.createdAt}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm" onClick={() => void remove(row)}>
+                      移除
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // ---------------- 管理员配置（按 UID 授权，支持多管理员） ----------------
 function AdminsTab() {
   const { user } = useAuth();
@@ -1387,12 +1511,13 @@ export function AdminPage() {
       <Tabs defaultValue="overview">
         <TabsList className="mb-4 w-full max-w-full flex-nowrap justify-start overflow-x-auto [&>[role=tab]]:flex-none">
           <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="users">用户</TabsTrigger>
+          {isAdmin && <TabsTrigger value="users">用户</TabsTrigger>}
           <TabsTrigger value="posts">帖子</TabsTrigger>
           <TabsTrigger value="categories">分类</TabsTrigger>
           <TabsTrigger value="reports">举报</TabsTrigger>
           <TabsTrigger value="views">浏览统计</TabsTrigger>
           {isAdmin && <TabsTrigger value="notify">通知</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="moderators">版主</TabsTrigger>}
           {isAdmin && <TabsTrigger value="admins">管理员</TabsTrigger>}
           {isAdmin && <TabsTrigger value="audit">审计日志</TabsTrigger>}
         </TabsList>

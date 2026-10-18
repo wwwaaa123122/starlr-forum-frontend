@@ -1,54 +1,29 @@
-# 星辰旅人论坛 — 前端（React + shadcn/ui）
+# Starlr Forum 前端（经典版）— ⚠️ 已下架归档
 
-> React 19 + TypeScript + Vite 7 + Tailwind CSS v4 + shadcn/ui（new-york 风格）
-> 对应后端仓库：`starlr-forum-backend`（Cloudflare Workers + D1 + KV + R2 + Resend）
+> **本项目已停止维护并归档（只读）。请不要在新部署中使用。**
 
-**线上地址：** https://i.182030.xyz
+## 请改用现行前端
 
-## 页面
+👉 **[starlr-forum-frontend-x](https://github.com/wwwaaa123122/starlr-forum-frontend-x)** — 现行 Web 前端（React 19 + Vite + Tailwind v4，X/Twitter 风格三栏时间线 + 完整管理后台），功能是本经典版的超集：
 
-| 路由 | 说明 |
-| --- | --- |
-| `/` | 首页（排序 Tabs + 分类侧栏/移动端分类滑块） |
-| `/categories` `/categories/:slug` | 分类 |
-| `/posts/:id` | 帖子详情（回复楼中楼、点赞、收藏、分享、举报） |
-| `/new` `/edit/:id` | 发帖 / 编辑（Markdown 预览、标签、图片上传） |
-| `/search` | 搜索（帖子/用户，支持按 UID） |
-| `/users/:username` | 用户主页 |
-| `/notifications` | 通知（未读数、全部已读） |
-| `/settings` | 设置（资料、头像上传、**修改密码**、收藏、登出所有设备） |
-| `/login` `/register` | 登录 / 注册（**昵称**可选、Turnstile 人机校验） |
-| `/forgot-password` `/reset-password` | 忘记密码 / 重置密码 |
-| `/admin` | 管理后台（概览/用户/帖子/分类/举报/**管理员配置**/审计日志） |
+| 能力 | 经典版（本仓库） | frontend-x |
+|---|---|---|
+| 时间线 UI | 传统论坛列表 | 三栏 X 风格时间线 + 移动端底部导航/抽屉/FAB |
+| 管理后台 | 10 个分区 | 10 个分区（含站点设置、服务配置、SSO 同步） |
+| 邮箱激活页 | ❌ | ✅ `/verify-email` |
+| 站长/管理员/版主徽章区分 | 部分 | ✅ |
+| 楼中楼多层回复 | 有丢层 bug | ✅ 已修复（深层回复提升） |
+| 开源自部署适配 | ❌ | ✅ 配置模板 + 一键初始化脚本 + 完整部署文档 |
 
-## 快速开始
+配套后端：[starlr-forum-backend](https://github.com/wwwaaa123122/starlr-forum-backend)
 
-```bash
-pnpm install
-pnpm dev        # Vite @ :5173（/api、/oauth、/.well-known 代理到 127.0.0.1:8787）
-pnpm build      # 产出 dist/（后端部署时作为静态资源）
-pnpm typecheck  # tsc -b
-```
+## 归档说明
 
-> 后端仓库请克隆为同级目录（后端 `wrangler.jsonc` 的 assets 指向 `../frontend/dist`）：
-> `git clone git@github.com:wwwaaa123122/starlr-forum-backend.git backend`
+- 仓库已设为 **只读归档**，不再接受 issue / PR / 提交；
+- 代码与历史保留，仅供查阅（GPL-3.0-or-later 授权继续有效，已 fork 的副本不受影响）；
+- 曾部署的域名（i.182030.xyz 根路径）已不再提供此版本页面，现由 `forum.182030.xyz` / `f.182030.xyz` 提供 frontend-x 版本；
+- 版权所有 © 2026 wwwaaa123122。
 
-## 架构要点
+## 许可
 
-- **API 客户端**（`src/lib/api.ts`）：自动携带 Bearer Token；401 时单飞刷新并重试；到期前 10 分钟主动轮换
-- **认证状态**（`src/lib/auth.tsx`）：登录/注册/登出；Token 存 localStorage（`xc.access` / `xc.refresh`）
-- **Markdown**（`src/components/markdown.tsx`）：react-markdown + remark-gfm + rehype-highlight，**rehype-sanitize 白名单**（原始 HTML 永不渲染；`a` 仅 http/https/mailto，`img` 仅 http/https）
-- **shadcn/ui**：`src/components/ui/` 手写组件（stone 基色，indigo 品牌色），`cn()` 工具
-- **主题**：next-themes 深色模式（`xc-theme` 持久化记忆 + 无闪烁初始化脚本，浅色/深色/跟随系统三态切换）+ `sonner` 提示 + TanStack Query v5 数据层
-- **布局稳定**：`html { scrollbar-gutter: stable }` 防止弹层打开时顶栏/页脚左右移动；移动端网格 `minmax(0,1fr)` 防止内容撑破屏幕
-- **安全头**：`public/_headers`（CSP 禁内联脚本，允许 challenges.cloudflare.com；/assets/* 一年不可变缓存）
-- **图片上传**：编辑器/回复框的「图片」按钮 → `/api/upload`（purpose=post/reply）→ 光标处插入 Markdown
-
-## 构建与部署
-
-前端只产出静态 `dist/`，部署由后端仓库的 `wrangler deploy` 完成（单 Worker 承载 API + 静态资源）：
-
-```bash
-pnpm build   # 在本仓库
-cd ../backend && pnpm deploy
-```
+本项目基于 [GPL-3.0-or-later](./LICENSE) 开源，按「现状」提供，不附带任何担保。

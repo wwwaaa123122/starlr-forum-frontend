@@ -9,3 +9,4 @@ coverage/
 
 # 系统文件
 .DS_Store
+dist-f/

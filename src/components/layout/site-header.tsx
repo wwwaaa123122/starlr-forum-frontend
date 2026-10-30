@@ -79,7 +79,7 @@ function NotificationBell() {
       <Link to="/notifications">
         <Bell className="size-[1.15rem]" />
         {unread > 0 && (
-          <Badge className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full px-1 text-[10px] leading-none">
+          <Badge className="absolute -top-1 -right-1 h-4 min-w-4 rounded-none px-1 text-[10px] leading-none">
             {unread > 99 ? '99+' : unread}
           </Badge>
         )}
@@ -119,19 +119,19 @@ export function SiteHeader() {
 
   const navItems = (
     <>
-      <NavLink to="/" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">
+      <NavLink to="/" className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent">
         <Home className="size-4" /> 首页
       </NavLink>
       <NavLink
         to="/categories"
-        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+        className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent"
       >
         <Compass className="size-4" /> 分类
       </NavLink>
       {user && (
         <NavLink
           to="/notifications"
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+          className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent"
         >
           <Bell className="size-4" /> 通知
         </NavLink>
@@ -160,7 +160,7 @@ export function SiteHeader() {
               {user && (
                 <NavLink
                   to={`/users/${user.username}`}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
+                  className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent"
                 >
                   <User className="size-4" /> 我的主页
                 </NavLink>
@@ -215,7 +215,7 @@ export function SiteHeader() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer" aria-label="用户菜单">
+                <button className="rounded-none outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer" aria-label="用户菜单">
                   <Avatar className="size-8 border">
                     <AvatarImage src={user.avatarUrl ?? undefined} alt={user.nickname} />
                     <AvatarFallback>{user.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>

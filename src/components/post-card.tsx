@@ -84,11 +84,11 @@ export function PostCard({ post }: { post: PostSummary }) {
 export function PostCardSkeleton() {
   return (
     <div className="flex gap-3 border-b px-4 py-3.5">
-      <div className="bg-muted size-9 shrink-0 animate-pulse rounded-full" />
+      <div className="bg-muted size-9 shrink-0 animate-pulse rounded-none" />
       <div className="flex-1 space-y-2">
-        <div className="bg-muted h-4 w-3/5 animate-pulse rounded" />
-        <div className="bg-muted h-3 w-full animate-pulse rounded" />
-        <div className="bg-muted h-3 w-1/3 animate-pulse rounded" />
+        <div className="bg-muted h-4 w-3/5 animate-pulse rounded-none" />
+        <div className="bg-muted h-3 w-full animate-pulse rounded-none" />
+        <div className="bg-muted h-3 w-1/3 animate-pulse rounded-none" />
       </div>
     </div>
   );

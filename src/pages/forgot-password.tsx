@@ -32,7 +32,7 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center px-4 py-12">
-      <div className="text-primary mb-4 flex size-12 items-center justify-center rounded-full border">
+      <div className="text-primary mb-4 flex size-12 items-center justify-center rounded-none border">
         <Mail className="size-6" />
       </div>
       <Card className="w-full">

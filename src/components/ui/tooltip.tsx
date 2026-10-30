@@ -20,13 +20,13 @@ function TooltipContent({ className, sideOffset = 4, children, ...props }: React
       <TooltipPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          'bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 z-50 w-fit rounded-md px-3 py-1.5 text-xs',
+          'bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 z-50 w-fit rounded-none px-3 py-1.5 text-xs',
           className,
         )}
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+        <TooltipPrimitive.Arrow className="fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-none" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

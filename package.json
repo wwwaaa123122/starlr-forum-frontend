@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 5173",
     "build": "tsc -b && vite build",
+    "build:frontend": "tsc -b && vite build --outDir dist-f",
     "preview": "vite preview --port 5173",
     "typecheck": "tsc -b --noEmit"
   },

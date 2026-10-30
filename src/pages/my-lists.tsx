@@ -75,7 +75,7 @@ function MyListPage({ kind }: { kind: ListKind }) {
       <h1 className="mb-4 text-lg font-bold">{tab.label}</h1>
 
       {/* 点赞 / 收藏 切换 */}
-      <div className="bg-card mb-4 flex gap-1 rounded-xl border p-1">
+      <div className="bg-card mb-4 flex gap-1 rounded-none border p-1">
         {TABS.map((t) => {
           const Icon = t.icon;
           return (
@@ -83,7 +83,7 @@ function MyListPage({ kind }: { kind: ListKind }) {
               key={t.kind}
               to={t.kind === 'likes' ? '/me/likes' : '/me/favorites'}
               className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                'flex flex-1 items-center justify-center gap-1.5 rounded-none px-3 py-2 text-sm transition-colors',
                 t.kind === kind ? 'bg-accent font-medium' : 'text-muted-foreground hover:bg-accent/50',
               )}
             >
@@ -95,13 +95,13 @@ function MyListPage({ kind }: { kind: ListKind }) {
       </div>
 
       {isLoading ? (
-        <div className="bg-card rounded-xl border">
+        <div className="bg-card rounded-none border">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="m-3 h-20" />
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-card flex flex-col items-center gap-2 rounded-xl border px-4 py-16 text-center">
+        <div className="bg-card flex flex-col items-center gap-2 rounded-none border px-4 py-16 text-center">
           <Eye className="text-muted-foreground size-8" />
           <p className="text-sm font-medium">{tab.empty}</p>
           <p className="text-muted-foreground text-xs">{tab.hint}</p>
@@ -111,7 +111,7 @@ function MyListPage({ kind }: { kind: ListKind }) {
         </div>
       ) : (
         <>
-          <div className="bg-card rounded-xl border">
+          <div className="bg-card rounded-none border">
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}

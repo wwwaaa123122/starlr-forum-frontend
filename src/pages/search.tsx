@@ -96,7 +96,7 @@ export function SearchPage() {
         <p className="text-muted-foreground py-16 text-center text-sm">输入关键词开始搜索</p>
       ) : type === 'post' ? (
         <>
-          <div className="bg-card rounded-xl border">
+          <div className="bg-card rounded-none border">
             {postsLoading ? (
               <>
                 <PostCardSkeleton />
@@ -118,7 +118,7 @@ export function SearchPage() {
         </>
       ) : (
         <>
-          <div className="bg-card rounded-xl border">
+          <div className="bg-card rounded-none border">
             {usersLoading ? (
               <p className="text-muted-foreground px-4 py-16 text-center text-sm">搜索中…</p>
             ) : (usersData?.users.length ?? 0) === 0 ? (

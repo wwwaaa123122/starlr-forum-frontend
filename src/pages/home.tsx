@@ -80,7 +80,7 @@ export function HomePage() {
           ))}
         </div>
 
-        <div className="bg-card rounded-xl border">
+        <div className="bg-card rounded-none border">
           {isLoading ? (
             <>
               <PostCardSkeleton />
@@ -109,12 +109,12 @@ export function HomePage() {
 
       {/* 桌面侧栏 */}
       <aside className="hidden min-w-0 space-y-4 md:block">
-        <div className="bg-card rounded-xl border p-4">
+        <div className="bg-card rounded-none border p-4">
           <h2 className="mb-3 text-sm font-semibold">分类</h2>
           <nav className="space-y-1">
             <Link
               to="/"
-              className={`flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent ${!slug ? 'bg-accent font-medium' : ''}`}
+              className={`flex items-center justify-between rounded-none px-2 py-1.5 text-sm hover:bg-accent ${!slug ? 'bg-accent font-medium' : ''}`}
             >
               <span>全部</span>
               <span className="text-muted-foreground text-xs">
@@ -125,7 +125,7 @@ export function HomePage() {
               <Link
                 key={c.id}
                 to={`/categories/${c.slug}`}
-                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent ${slug === c.slug ? 'bg-accent font-medium' : ''}`}
+                className={`flex items-center justify-between rounded-none px-2 py-1.5 text-sm hover:bg-accent ${slug === c.slug ? 'bg-accent font-medium' : ''}`}
               >
                 <span className="flex min-w-0 items-center gap-1.5">
                   <CategoryIcon icon={c.icon} className="size-4 shrink-0" />
@@ -137,7 +137,7 @@ export function HomePage() {
           </nav>
         </div>
 
-        <div className="bg-card rounded-xl border p-4 text-sm">
+        <div className="bg-card rounded-none border p-4 text-sm">
           <h2 className="mb-2 text-sm font-semibold">关于</h2>
           <p className="text-muted-foreground leading-relaxed">
             Starlr Forum —— 运行在 Cloudflare Workers + D1 上的现代化中文社区，支持 Markdown、标签、通知与 @ 提及。

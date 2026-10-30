@@ -5,7 +5,7 @@
 
 /* shadcn/ui 主题变量 — stone 基调，星辰旅人品牌色（靛蓝/星紫） */
 :root {
-  --radius: 0.625rem;
+  --radius: 0rem;
   --background: oklch(0.985 0.002 247.839);
   --foreground: oklch(0.216 0.006 56.043);
   --card: oklch(1 0 0);
@@ -174,7 +174,7 @@
 }
 .md-content code {
   background: var(--muted);
-  border-radius: 0.3em;
+  border-radius: 0;
   padding: 0.15em 0.4em;
   font-size: 0.875em;
 }

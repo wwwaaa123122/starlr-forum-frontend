@@ -442,7 +442,7 @@ export function PostDetailPage() {
       </Button>
 
       {/* 帖子主体 */}
-      <article className="bg-card rounded-xl border">
+      <article className="bg-card rounded-none border">
         <div className="p-5">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {Boolean(post.isPinned) && (
@@ -597,7 +597,7 @@ export function PostDetailPage() {
 
         {/* 回复输入 */}
         {user ? (
-          <div className="bg-card mb-4 rounded-xl border p-4">
+          <div className="bg-card mb-4 rounded-none border p-4">
             {replyTo && (
               <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs">
                 <span>
@@ -645,7 +645,7 @@ export function PostDetailPage() {
                 />
               </TabsContent>
               <TabsContent value="preview">
-                <div className="min-h-24 rounded-md border p-3">
+                <div className="min-h-24 rounded-none border p-3">
                   {replyContent.trim() ? <MarkdownView content={replyContent} /> : <p className="text-muted-foreground text-sm">没有可预览的内容</p>}
                 </div>
               </TabsContent>
@@ -658,7 +658,7 @@ export function PostDetailPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-card text-muted-foreground mb-4 rounded-xl border p-4 text-center text-sm">
+          <div className="bg-card text-muted-foreground mb-4 rounded-none border p-4 text-center text-sm">
             <Link to="/login" className="text-primary hover:underline">
               登录
             </Link>{' '}
@@ -666,7 +666,7 @@ export function PostDetailPage() {
           </div>
         )}
 
-        <div className="bg-card rounded-xl border">
+        <div className="bg-card rounded-none border">
           {replies.length === 0 ? (
             <p className="text-muted-foreground px-4 py-10 text-center text-sm">还没有回复，来抢沙发～</p>
           ) : (

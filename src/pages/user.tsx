@@ -55,7 +55,7 @@ export function UserPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6">
-        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-36 w-full rounded-none" />
       </div>
     );
   }
@@ -120,7 +120,7 @@ export function UserPage() {
         </TabsList>
 
         <TabsContent value="posts" className="mt-3">
-          <div className="bg-card rounded-xl border">
+          <div className="bg-card rounded-none border">
             {(postsData?.posts.length ?? 0) === 0 ? (
               <p className="text-muted-foreground px-4 py-10 text-center text-sm">还没有发布过帖子</p>
             ) : (
@@ -130,7 +130,7 @@ export function UserPage() {
         </TabsContent>
 
         <TabsContent value="replies" className="mt-3">
-          <div className="bg-card rounded-xl border divide-y">
+          <div className="bg-card rounded-none border divide-y">
             {(repliesData?.replies.length ?? 0) === 0 ? (
               <p className="text-muted-foreground px-4 py-10 text-center text-sm">还没有发表过回复</p>
             ) : (

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Ban, CheckCircle, Eye, FileText, Flag, ImagePlus, Mic, MicOff, Pencil, Plus, RotateCcw, ScrollText, Send, ShieldCheck, Trash2, TrendingUp, User, Users, X } from 'lucide-react';
+import { Ban, CheckCircle, Eye, FileText, Flag, ImagePlus, Mic, MicOff, Pencil, Plus, RotateCcw, ScrollText, SearchCheck, Send, ShieldCheck, Trash2, TrendingUp, User, Users, X } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { formatNumber, timeAgo } from '@/lib/utils';
@@ -73,8 +73,8 @@ function StatCards() {
     <div className="space-y-4">
     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {items.map(({ label, value, icon: Icon }) => (
-        <div key={label} className="bg-card flex items-center gap-3 rounded-xl border p-4">
-          <div className="bg-primary/10 text-primary rounded-lg p-2">
+        <div key={label} className="bg-card flex items-center gap-3 rounded-none border p-4">
+          <div className="bg-primary/10 text-primary rounded-none p-2">
             <Icon className="size-4" />
           </div>
           <div>
@@ -86,7 +86,7 @@ function StatCards() {
       </div>
 
       {/* 浏览量排行 */}
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-none border">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h3 className="text-sm font-semibold">浏览量排行</h3>
           <span className="text-muted-foreground text-xs">Top 10</span>
@@ -258,7 +258,7 @@ function UsersTab() {
         placeholder="搜索 UID / 用户名 / 昵称 / 邮箱…"
         className="max-w-sm"
       />
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-none border">
         <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
@@ -485,7 +485,7 @@ function UsersTab() {
               onClick={() =>
                 setPickedCats((prev) => (prev.includes(SITE_WIDE) ? prev.filter((x) => x !== SITE_WIDE) : [SITE_WIDE]))
               }
-              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${pickedCats.includes(SITE_WIDE) ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+              className={`rounded-none border px-3 py-1.5 text-xs transition-colors ${pickedCats.includes(SITE_WIDE) ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
             >
               🌐 全站管辖
             </button>
@@ -498,7 +498,7 @@ function UsersTab() {
                       key={cat.id}
                       type="button"
                       onClick={() => toggleCat(cat.id)}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                      className={`rounded-none border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
                     >
                       {cat.icon} {cat.name}
                     </button>
@@ -555,7 +555,7 @@ function PostsTab() {
         </SelectContent>
       </Select>
 
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-none border">
         <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
@@ -654,7 +654,7 @@ function IconPicker({ icon, onChange }: { icon: string; onChange: (v: string) =>
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-md border">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-none border">
           <CategoryIcon icon={icon} className="size-6 text-xl" />
         </span>
         <Input
@@ -690,7 +690,7 @@ function IconPicker({ icon, onChange }: { icon: string; onChange: (v: string) =>
             key={e}
             type="button"
             onClick={() => onChange(e)}
-            className={`rounded px-1.5 py-0.5 text-base leading-none transition-colors hover:bg-accent ${
+            className={`rounded-none px-1.5 py-0.5 text-base leading-none transition-colors hover:bg-accent ${
               icon === e ? 'bg-accent ring-1 ring-primary' : ''
             }`}
             aria-label={`选择图标 ${e}`}
@@ -762,7 +762,7 @@ function CategoriesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-none border">
         <div className="flex justify-end px-4 pt-3">
           <Button
             variant="outline"
@@ -842,7 +842,7 @@ function CategoriesTab() {
         </Table>
       </div>
       {isAdmin && (
-        <div className="bg-card space-y-3 rounded-xl border p-4">
+        <div className="bg-card space-y-3 rounded-none border p-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
             <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
@@ -939,10 +939,10 @@ function ReportsTab() {
         {isLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (data?.reports.length ?? 0) === 0 ? (
-          <p className="text-muted-foreground bg-card rounded-xl border px-4 py-10 text-center text-sm">没有举报记录</p>
+          <p className="text-muted-foreground bg-card rounded-none border px-4 py-10 text-center text-sm">没有举报记录</p>
         ) : (
           data!.reports.map((r) => (
-            <div key={r.id} className="bg-card rounded-xl border p-4">
+            <div key={r.id} className="bg-card rounded-none border p-4">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Badge variant="outline">{r.targetType === 'post' ? '帖子' : r.targetType === 'reply' ? '回复' : '用户'}</Badge>
                 <Badge variant={r.reason === 'spam' ? 'secondary' : 'destructive'}>
@@ -956,7 +956,7 @@ function ReportsTab() {
                 </span>
               </div>
               {r.detail && <p className="text-muted-foreground mt-2 text-sm">举报说明：{r.detail}</p>}
-              <div className="bg-muted/40 mt-2 rounded-lg border p-3">
+              <div className="bg-muted/40 mt-2 rounded-none border p-3">
                 <p className="flex flex-wrap items-center gap-2 text-xs">
                   <span className="text-muted-foreground">
                     被举报{r.targetType === 'post' ? '帖子' : r.targetType === 'reply' ? '回复' : '用户'}：
@@ -1132,7 +1132,7 @@ function ModeratorsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card space-y-3 rounded-xl border p-4">
+      <div className="bg-card space-y-3 rounded-none border p-4">
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名或 UID" />
           <Button onClick={() => void assign()} disabled={busy || pickedCats.length === 0}>
@@ -1143,7 +1143,7 @@ function ModeratorsTab() {
           <button
             type="button"
             onClick={() => setPickedCats((prev) => (prev.includes(SITE_WIDE) ? prev.filter((x) => x !== SITE_WIDE) : [SITE_WIDE]))}
-            className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${pickedCats.includes(SITE_WIDE) ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+            className={`rounded-none border px-3 py-1.5 text-xs transition-colors ${pickedCats.includes(SITE_WIDE) ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
           >
             🌐 全站管辖
           </button>
@@ -1156,7 +1156,7 @@ function ModeratorsTab() {
                     key={cat.id}
                     type="button"
                     onClick={() => toggleCat(cat.id)}
-                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                    className={`rounded-none border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
                   >
                     {cat.icon} {cat.name}
                   </button>
@@ -1166,7 +1166,7 @@ function ModeratorsTab() {
       </div>
 
       {(mods?.siteWide ?? []).length > 0 && (
-        <div className="bg-card overflow-x-auto rounded-xl border">
+        <div className="bg-card overflow-x-auto rounded-none border">
           <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
@@ -1211,7 +1211,7 @@ function ModeratorsTab() {
         </div>
       )}
 
-      <div className="bg-card overflow-x-auto rounded-xl border">
+      <div className="bg-card overflow-x-auto rounded-none border">
         <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
@@ -1317,7 +1317,7 @@ function AdminsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card rounded-xl border p-4">
+      <div className="bg-card rounded-none border p-4">
         <h2 className="mb-1 text-sm font-semibold">授权新管理员</h2>
         <p className="text-muted-foreground mb-3 text-xs">
           输入目标用户的 UID（注册时自动分配，管理员为 UID 1），即可授予管理员或版主权限。
@@ -1356,7 +1356,7 @@ function AdminsTab() {
                               key={cat.id}
                               type="button"
                               onClick={() => toggleAdminCat(cat.id)}
-                              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
+                              className={`rounded-none border px-3 py-1.5 text-xs transition-colors ${picked ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'}`}
                             >
                               {cat.icon} {cat.name}
                             </button>
@@ -1370,7 +1370,7 @@ function AdminsTab() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-none border">
         <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
@@ -1458,7 +1458,7 @@ function ViewsTab() {
     refetchInterval: 60_000,
   });
 
-  if (isLoading) return <Skeleton className="h-72 w-full rounded-xl" />;
+  if (isLoading) return <Skeleton className="h-72 w-full rounded-none" />;
 
   const t = data?.totals;
   const maxDaily = Math.max(1, ...(data?.daily ?? []).map((d) => d.views));
@@ -1473,21 +1473,21 @@ function ViewsTab() {
           { label: '近 30 天', value: t?.month ?? 0 },
           { label: '累计浏览（帖子）', value: t?.allTime ?? 0 },
         ].map((item) => (
-          <div key={item.label} className="bg-card rounded-xl border p-3">
+          <div key={item.label} className="bg-card rounded-none border p-3">
             <div className="text-muted-foreground text-xs">{item.label}</div>
             <div className="mt-1 text-xl font-semibold">{formatNumber(item.value)}</div>
           </div>
         ))}
       </div>
 
-      <div className="bg-card rounded-xl border p-4">
+      <div className="bg-card rounded-none border p-4">
         <h3 className="text-sm font-semibold">近 14 天趋势</h3>
         <div className="mt-3 flex h-32 items-end gap-1.5">
           {(data?.daily ?? []).map((d) => (
             <div key={d.date} className="group flex flex-1 flex-col items-center justify-end gap-1" title={`${d.date}：${d.views} 次`}>
               <span className="text-muted-foreground text-[10px] opacity-0 transition-opacity group-hover:opacity-100">{d.views}</span>
               <div
-                className="bg-primary/70 group-hover:bg-primary w-full rounded-t-sm transition-colors"
+                className="bg-primary/70 group-hover:bg-primary w-full rounded-none transition-colors"
                 style={{ height: `${Math.max(2, (d.views / maxDaily) * 100)}%` }}
               />
               <span className="text-muted-foreground text-[9px]">{d.date.slice(5)}</span>
@@ -1496,7 +1496,7 @@ function ViewsTab() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border p-4">
+      <div className="bg-card rounded-none border p-4">
         <h3 className="text-sm font-semibold">近 7 天热门帖子</h3>
         {(data?.top ?? []).length === 0 ? (
           <p className="text-muted-foreground mt-3 text-sm">暂无数据</p>
@@ -1517,7 +1517,7 @@ function ViewsTab() {
 
       <div>
         <h3 className="mb-2 text-sm font-semibold">最近浏览记录（最近 50 条）</h3>
-        <div className="bg-card overflow-x-auto rounded-xl border">
+        <div className="bg-card overflow-x-auto rounded-none border">
           <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
@@ -1595,7 +1595,7 @@ function NotificationsTab() {
   };
 
   return (
-    <div className="bg-card space-y-4 rounded-xl border p-4">
+    <div className="bg-card space-y-4 rounded-none border p-4">
       <div>
         <h3 className="text-sm font-semibold">发送系统通知</h3>
         <p className="text-muted-foreground mt-0.5 text-xs">
@@ -1654,7 +1654,7 @@ function AuditTab() {
   });
 
   return (
-    <div className="bg-card rounded-xl border">
+    <div className="bg-card rounded-none border">
       {/* 移动端横向滑动查看，避免列内容被挤成多行 */}
       <Table className="min-w-[900px]">
         <TableHeader>
@@ -1696,6 +1696,218 @@ function AuditTab() {
   );
 }
 
+// ---------------- SEO 推送记录 ----------------
+interface SeoPushLog {
+  id: string;
+  postId: string;
+  url: string;
+  title: string | null;
+  channel: 'baidu' | 'indexnow';
+  event: string;
+  status: 'ok' | 'failed';
+  httpCode: number | null;
+  attempts: number;
+  message: string | null;
+  createdAt: string;
+}
+
+const SEO_EVENT_LABEL: Record<string, string> = {
+  create: '发布',
+  edit: '编辑',
+  delete: '删除',
+  retry: '重试',
+  cron: '定时校验',
+};
+
+/** HTTP 状态码含义速查（IndexNow / 百度常见响应） */
+const SEO_HTTP_HINT: Record<number, string> = {
+  200: '已收录（URL 此前已提交过）',
+  202: '已受理，等待抓取',
+  400: '请求格式无效',
+  403: 'key 无效或域名未验证',
+  422: 'URL 与 key 的域名不匹配',
+  429: '请求过于频繁被限流',
+};
+
+function SeoPushesTab() {
+  const qc = useQueryClient();
+  const [channel, setChannel] = useState<'' | 'baidu' | 'indexnow'>('');
+  const [status, setStatus] = useState<'' | 'ok' | 'failed'>('');
+  const [page, setPage] = useState(1);
+  const [detail, setDetail] = useState<SeoPushLog | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'seo-pushes', channel, status, page],
+    queryFn: () => {
+      const p = new URLSearchParams({ page: String(page), pageSize: '30' });
+      if (channel) p.set('channel', channel);
+      if (status) p.set('status', status);
+      return api<{
+        logs: SeoPushLog[];
+        pagination: Pagination;
+        stats: { channel: string; status: string; n: number }[];
+      }>(`/api/admin/seo-pushes?${p}`);
+    },
+    refetchInterval: 30_000,
+  });
+
+  const retryMut = useMutation({
+    mutationFn: (postId: string) => api(`/api/admin/seo-pushes/${postId}/retry`, { method: 'POST' }),
+    onSuccess: () => {
+      toast.success('已重新推送');
+      void qc.invalidateQueries({ queryKey: ['admin', 'seo-pushes'] });
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
+  const validateMut = useMutation({
+    mutationFn: () => api<{ pushed: number }>('/api/admin/seo-pushes/validate-all', { method: 'POST' }),
+    onSuccess: (res) => {
+      toast.success(`全量校验完成：重推 ${res.pushed} 篇`);
+      void qc.invalidateQueries({ queryKey: ['admin', 'seo-pushes'] });
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
+  const stat = (ch: string, st: string) =>
+    data?.stats.find((s) => s.channel === ch && s.status === st)?.n ?? 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        {(['', 'baidu', 'indexnow'] as const).map((ch) => (
+          <button
+            key={ch || 'all'}
+            onClick={() => { setChannel(ch); setPage(1); }}
+            className={`rounded-none border px-3 py-1.5 text-[13px] transition ${
+              channel === ch ? 'border-primary bg-primary/10 font-bold text-primary' : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {ch === '' ? '全部渠道' : ch === 'baidu' ? '百度' : 'IndexNow'}
+          </button>
+        ))}
+        {(['', 'ok', 'failed'] as const).map((st) => (
+          <button
+            key={st || 'all'}
+            onClick={() => { setStatus(st); setPage(1); }}
+            className={`rounded-none border px-3 py-1.5 text-[13px] transition ${
+              status === st ? 'border-primary bg-primary/10 font-bold text-primary' : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {st === '' ? '全部状态' : st === 'ok' ? '成功' : '失败'}
+          </button>
+        ))}
+        <span className="flex-1" />
+        <span className="text-muted-foreground text-xs">
+          24h：百度 成功 {stat('baidu', 'ok')} / 失败 {stat('baidu', 'failed')} · IndexNow 成功 {stat('indexnow', 'ok')} / 失败 {stat('indexnow', 'failed')}
+        </span>
+        <Button size="sm" variant="outline" disabled={validateMut.isPending} onClick={() => validateMut.mutate()}>
+          <SearchCheck className="size-3.5" /> 全量校验
+        </Button>
+      </div>
+
+      <div className="bg-card border overflow-x-auto">
+        <Table className="min-w-[860px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>帖子</TableHead>
+              <TableHead>渠道</TableHead>
+              <TableHead>事件</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead className="text-right">HTTP</TableHead>
+              <TableHead className="text-right">重试</TableHead>
+              <TableHead>时间</TableHead>
+              <TableHead className="text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8}>
+                  <Skeleton className="my-2 h-8" />
+                </TableCell>
+              </TableRow>
+            ) : (
+              (data?.logs ?? []).map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="max-w-56 truncate text-xs font-medium">
+                    {l.title ? (
+                      <a href={l.url} target="_blank" rel="noreferrer" className="hover:underline">{l.title}</a>
+                    ) : (
+                      <span className="text-muted-foreground">{l.url}</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs">{l.channel === 'baidu' ? '百度' : 'IndexNow'}</TableCell>
+                  <TableCell className="text-xs">{SEO_EVENT_LABEL[l.event] ?? l.event}</TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => (l.message || l.httpCode) && setDetail(l)}
+                      className={`rounded-none px-2 py-0.5 text-[11px] font-bold ${
+                        l.status === 'ok' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'
+                      } ${(l.message || l.httpCode) ? 'cursor-pointer underline-offset-2 hover:underline' : 'cursor-default'}`}
+                    >
+                      {l.status === 'ok' ? '成功' : '失败'}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-right text-xs">{l.httpCode ?? '—'}</TableCell>
+                  <TableCell className="text-right text-xs">{l.attempts > 1 ? `${l.attempts} 次` : '—'}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{l.createdAt}</TableCell>
+                  <TableCell className="text-right">
+                    {l.status === 'failed' && (
+                      <Button
+                        size="sm" variant="ghost"
+                        disabled={retryMut.isPending}
+                        onClick={() => retryMut.mutate(l.postId)}
+                      >
+                        <RotateCcw className="size-3" /> 重试
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {(data?.pagination.totalPages ?? 1) > 1 && (
+        <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+      )}
+
+      {/* 失败详情弹窗 */}
+      <Dialog open={detail !== null} onOpenChange={(v) => !v && setDetail(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>推送详情</DialogTitle>
+            <DialogDescription>
+              {detail?.channel === 'baidu' ? '百度主动推送' : 'IndexNow（Bing/Yandex）'}
+              {' · '}{detail ? SEO_EVENT_LABEL[detail.event] ?? detail.event : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-2 text-sm">
+              {detail.httpCode !== null && (
+                <p>
+                  <span className="text-muted-foreground">HTTP {detail.httpCode}</span>
+                  {SEO_HTTP_HINT[detail.httpCode] && (
+                    <span className="text-muted-foreground">：{SEO_HTTP_HINT[detail.httpCode]}</span>
+                  )}
+                </p>
+              )}
+              {detail.attempts > 1 && (
+                <p className="text-muted-foreground">尝试 {detail.attempts} 次后失败</p>
+              )}
+              {detail.message && <p className="text-muted-foreground break-all">{detail.message}</p>}
+              <p className="text-muted-foreground break-all text-xs">{detail.url}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ---------------- 主页面 ----------------
 export function AdminPage() {
   const { user, isModerator, isAdmin, loading } = useAuth();
@@ -1704,7 +1916,7 @@ export function AdminPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <Skeleton className="h-96 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-none" />
       </div>
     );
   }
@@ -1740,6 +1952,7 @@ export function AdminPage() {
           {isAdmin && <TabsTrigger value="moderators">版主</TabsTrigger>}
           {isAdmin && <TabsTrigger value="admins">管理员</TabsTrigger>}
           {isAdmin && <TabsTrigger value="audit">审计日志</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="seo-pushes">推送记录</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview">
           <StatCards />
@@ -1779,6 +1992,11 @@ export function AdminPage() {
         {isAdmin && (
           <TabsContent value="audit">
             <AuditTab />
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="seo-pushes">
+            <SeoPushesTab />
           </TabsContent>
         )}
       </Tabs>

@@ -125,7 +125,7 @@ export function MentionTextarea({
         className={className}
       />
       {listOpen && (
-        <div className="bg-popover absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-md border shadow-md">
+        <div className="bg-popover absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-none border shadow-md">
           {users.map((u, i) => (
             <button
               key={u.username}

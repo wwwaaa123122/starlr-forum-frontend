@@ -45,7 +45,7 @@ export function VerifyEmailPage() {
             {state === 'ok' ? (
               <CheckCircle2 className="size-12 text-emerald-500" />
             ) : state === 'loading' ? (
-              <div className="border-primary size-10 animate-spin rounded-full border-2 border-t-transparent" />
+              <div className="border-primary size-10 animate-spin rounded-none border-2 border-t-transparent" />
             ) : (
               <XCircle className="text-destructive size-12" />
             )}

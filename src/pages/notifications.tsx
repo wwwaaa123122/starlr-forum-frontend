@@ -57,7 +57,7 @@ export function NotificationsPage() {
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <Bell className="size-5" /> 通知
           {(data?.unread ?? 0) > 0 && (
-            <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+            <span className="bg-primary text-primary-foreground rounded-none px-2 py-0.5 text-xs">
               {data!.unread} 条未读
             </span>
           )}
@@ -72,7 +72,7 @@ export function NotificationsPage() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border">
+      <div className="bg-card rounded-none border">
         {isLoading ? (
           <>
             <Skeleton className="m-4 h-12" />

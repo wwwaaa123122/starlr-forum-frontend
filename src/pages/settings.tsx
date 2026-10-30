@@ -134,7 +134,7 @@ export function SettingsPage() {
   if (loading || !user) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-6">
-        <Skeleton className="h-72 w-full rounded-xl" />
+        <Skeleton className="h-72 w-full rounded-none" />
       </div>
     );
   }
@@ -225,16 +225,16 @@ export function SettingsPage() {
             const dev = describeDevice(sess.device);
             const Icon = dev.kind === 'mobile' ? Smartphone : dev.kind === 'tablet' ? Tablet : Laptop;
             return (
-              <div key={sess.id} className="flex flex-wrap items-start justify-between gap-3 rounded-lg border p-3">
+              <div key={sess.id} className="flex flex-wrap items-start justify-between gap-3 rounded-none border p-3">
                 <div className="flex min-w-0 gap-3">
-                  <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
+                  <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-none">
                     <Icon className="size-4" />
                   </div>
                   <div className="min-w-0 text-sm">
                     <p className="flex flex-wrap items-center gap-2 font-medium">
                       {dev.label}
                       {sess.current ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-normal text-emerald-600 dark:text-emerald-400">
+                        <span className="inline-flex items-center gap-1 rounded-none bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-normal text-emerald-600 dark:text-emerald-400">
                           <ShieldCheck className="size-3" /> 当前设备
                         </span>
                       ) : null}

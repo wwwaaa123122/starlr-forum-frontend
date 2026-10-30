@@ -259,7 +259,7 @@ export function PostEditorPage() {
               />
             </TabsContent>
             <TabsContent value="preview">
-              <div className="bg-card min-h-80 rounded-md border p-4">
+              <div className="bg-card min-h-80 rounded-none border p-4">
                 {content.trim() ? (
                   <MarkdownView content={content} />
                 ) : (

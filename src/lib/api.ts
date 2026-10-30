@@ -46,7 +46,8 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
     if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
-    const res = await fetch(path, {
+    // 跨域部署（VITE_API_BASE 指向独立 API 域）时拼接完整地址；同源开发为空串
+    const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}${path}`, {
       method,
       headers,
       body: isForm ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,

@@ -44,7 +44,7 @@ export function CookieConsent() {
     <>
       {bannerOpen && consent === null && (
         <div className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-          <div className="bg-card mx-auto max-w-3xl rounded-xl border p-4 shadow-lg">
+          <div className="bg-card mx-auto max-w-3xl rounded-none border p-4 shadow-lg">
             <div className="flex gap-3">
               <Cookie className="text-muted-foreground mt-0.5 size-4 shrink-0" />
               <div className="min-w-0 flex-1">

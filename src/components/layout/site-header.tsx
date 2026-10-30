@@ -18,6 +18,7 @@ import {
   Heart,
   Star,
 } from 'lucide-react';
+import { assetUrl } from '@/lib/base-url';
 import { useTheme } from 'next-themes';
 import { Cookie } from 'lucide-react';
 import { openCookieSettings } from '@/lib/consent';
@@ -217,7 +218,7 @@ export function SiteHeader() {
               <DropdownMenuTrigger asChild>
                 <button className="rounded-none outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer" aria-label="用户菜单">
                   <Avatar className="size-8 border">
-                    <AvatarImage src={user.avatarUrl ?? undefined} alt={user.nickname} />
+                    <AvatarImage src={assetUrl(user.avatarUrl)} alt={user.nickname} />
                     <AvatarFallback>{user.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </button>

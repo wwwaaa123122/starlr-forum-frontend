@@ -66,7 +66,7 @@ export function MentionTextarea({
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}/api/users/search?q=${encodeURIComponent(q)}`);
         if (!res.ok) return;
         const data = (await res.json()) as { users: MentionUser[] };
         setUsers(data.users ?? []);

@@ -90,7 +90,8 @@ let configCache: { turnstileSiteKey: string | null } | null = null;
 export async function fetchSiteConfig(): Promise<{ turnstileSiteKey: string | null }> {
   if (configCache) return configCache;
   try {
-    const res = await fetch('/api/config');
+    // 跨域部署时拼接 API 基址（同源为空串）
+    const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}/api/config`);
     configCache = (await res.json()) as { turnstileSiteKey: string | null };
   } catch {
     configCache = { turnstileSiteKey: null };

@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { CurrentUser } from '@/lib/auth';
 import type { Pagination, PostSummary } from '@/lib/types';
+import { assetUrl } from '@/lib/base-url';
 
 export function SettingsPage() {
   const { user, loading, refreshUser, logout } = useAuth();
@@ -114,7 +115,7 @@ export function SettingsPage() {
       const form = new FormData();
       form.append('file', file);
       form.append('purpose', 'avatar');
-      const res = await fetch('/api/upload', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}/api/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('xc.access') ?? ''}` },
         body: form,
@@ -151,7 +152,7 @@ export function SettingsPage() {
         <CardContent className="space-y-5">
           <div className="flex items-center gap-4">
             <Avatar className="size-16 border">
-              <AvatarImage src={user.avatarUrl ?? undefined} alt={user.nickname} />
+              <AvatarImage src={assetUrl(user.avatarUrl)} alt={user.nickname} />
               <AvatarFallback className="text-xl">{user.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>

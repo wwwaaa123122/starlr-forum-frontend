@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { formatNumber, stripMarkdown, timeAgo } from '@/lib/utils';
 import type { PostSummary } from '@/lib/types';
+import { assetUrl } from '@/lib/base-url';
 
 function tagNames(tags: PostSummary['tags']): string[] {
   if (!tags) return [];
@@ -18,7 +19,7 @@ export function PostCard({ post }: { post: PostSummary }) {
     <article className="hover:bg-accent/40 group flex gap-3 border-b px-4 py-3.5 transition-colors last:border-b-0">
       <Link to={`/users/${encodeURIComponent(authorName)}`} className="shrink-0" aria-label={`${authorName} 的主页`}>
         <Avatar className="size-9 border">
-          <AvatarImage src={post.authorAvatar ?? undefined} alt={authorName} />
+          <AvatarImage src={assetUrl(post.authorAvatar)} alt={authorName} />
           <AvatarFallback>{authorName.slice(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
       </Link>

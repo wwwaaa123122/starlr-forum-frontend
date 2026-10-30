@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Pagination, PostSummary, UserProfile } from '@/lib/types';
+import { assetUrl } from '@/lib/base-url';
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -131,7 +132,7 @@ export function SearchPage() {
                   className="hover:bg-accent/40 flex items-center gap-3 border-b px-4 py-3.5 last:border-b-0"
                 >
                   <Avatar className="size-10 border">
-                    <AvatarImage src={u.avatarUrl ?? undefined} alt={u.username} />
+                    <AvatarImage src={assetUrl(u.avatarUrl)} alt={u.username} />
                     <AvatarFallback>{u.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">

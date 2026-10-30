@@ -16,6 +16,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
+import { assetUrl } from '@/lib/base-url';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { MarkdownView } from '@/components/markdown';
@@ -204,7 +205,7 @@ function ReplyItem({
       <div className="flex gap-3">
         <Link to={`/users/${reply.authorName}`} className="shrink-0">
           <Avatar className="size-8 border">
-            <AvatarImage src={reply.authorAvatar ?? undefined} alt={reply.authorName} />
+            <AvatarImage src={assetUrl(reply.authorAvatar)} alt={reply.authorName} />
             <AvatarFallback>{reply.authorName.slice(0, 1).toUpperCase()}</AvatarFallback>
           </Avatar>
         </Link>
@@ -466,7 +467,7 @@ export function PostDetailPage() {
           <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-3 text-xs">
             <Link to={`/users/${post.authorName}`} className="flex items-center gap-2">
               <Avatar className="size-6 border">
-                <AvatarImage src={post.authorAvatar ?? undefined} alt={post.authorName} />
+                <AvatarImage src={assetUrl(post.authorAvatar)} alt={post.authorName} />
                 <AvatarFallback>{post.authorName.slice(0, 1)}</AvatarFallback>
               </Avatar>
               <span className="text-foreground font-medium">{post.authorName}</span>

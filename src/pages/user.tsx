@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MarkdownView } from '@/components/markdown';
 import { formatNumber, timeAgo } from '@/lib/utils';
 import type { Pagination, PostSummary, UserProfile } from '@/lib/types';
+import { assetUrl } from '@/lib/base-url';
 
 interface UserReply {
   id: string;
@@ -76,7 +77,7 @@ export function UserPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <Avatar className="size-16 border sm:size-20">
-            <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.nickname} />
+            <AvatarImage src={assetUrl(profile.avatarUrl)} alt={profile.nickname} />
             <AvatarFallback className="text-xl">{profile.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">

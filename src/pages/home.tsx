@@ -91,7 +91,6 @@ export function HomePage() {
             </>
           ) : (postsData?.posts.length ?? 0) === 0 ? (
             <div className="text-muted-foreground flex flex-col items-center gap-3 px-4 py-16 text-center">
-              <span className="text-3xl">🌌</span>
               <p>还没有帖子，来发布第一篇吧！</p>
               {user && (
                 <Button asChild size="sm">

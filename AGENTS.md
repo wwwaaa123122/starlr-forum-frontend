@@ -1,22 +1,20 @@
-# AGENTS.md — frontend（经典版前端，已下线）
+# AGENTS.md — frontend（经典版前端，frontend.182030.xyz）
 
 React 19 + Vite 7 + TypeScript + Tailwind v4 + shadcn/ui（Radix）+ TanStack Query v5 的原始 Web 前端。
 
-## ⚠️ 状态：已从生产下线（2026-10-07）
+## 状态：已重启上线（2026-10-30）
 
-- 曾经的 Worker `xingchen-forum`（i.182030.xyz 同时服务前端+API）**已删除**，i.182030.xyz 现在是纯 API（`forum-backend`）。
-- 生产入口只剩 **Starlr X**（`../frontend-x`，x.182030.xyz）与纯前端 f 站（f.182030.xyz）。
-- 本目录现在仅剩两个用途：
-  1. **本地开发资源**：`../backend/wrangler dev` 的 assets 指向 `frontend/dist`（`npx wrangler dev` 时会用到）；
-  2. 历史对照/文档。
-
-**默认不要在这里开发新功能**——用户要网页新特性时一律落在 `../frontend-x`；仅当用户明确点名「经典版」才动这里，且改动先在本地 dev 验证（无法部署生产）。
+- Worker `forum-frontend-classic`（`../backend/wrangler.frontend-classic.jsonc`）托管 `dist-f/`，域名 **frontend.182030.xyz**（custom_domain）。
+- 零数据绑定，浏览器跨域直连 `forum-backend`（i.182030.xyz）；CORS/OAuth 白名单已在 backend 放行本域名。
+- 全站 UI 直角（--radius: 0 + rounded-none）；管理后台含「推送记录」Tab（SEO 推送接口配置界面）。
+- 构建跨域产物：`VITE_API_BASE=https://i.182030.xyz npm run build:frontend` → dist-f/（勿提交，已 gitignore）。
 
 ## 命令
 
 ```bash
 npm run dev          # Vite @ :5173（API 代理 :8787）
-npm run build        # tsc -b && vite build → dist/（仅供本地 wrangler dev）
+npm run build        # tsc -b npm run build        # tsc -b && vite build → dist/（仅供本地 wrangler dev）npm run build        # tsc -b && vite build → dist/（仅供本地 wrangler dev） vite build → dist/（本地 dev 用）
+VITE_API_BASE=https://i.182030.xyz npm run build:frontend   # → dist-f/（frontend.182030.xyz 部署产物）
 npm run typecheck
 ```
 
@@ -45,4 +43,4 @@ src/
 
 ## Git
 
-独立仓库 `github.com/wwwaaa123122/starlr-forum-frontend`（main，**中文提交信息**）。虽已下线，仍正常提交推送，保持仓库与本地一致。
+独立仓库 `github.com/wwwaaa123122/starlr-forum-frontend`（main，**中文提交信息**）。

@@ -98,6 +98,9 @@ export interface UserProfile {
   replyCount: number;
   createdAt: string;
   banned?: boolean;
+  likesPublic?: boolean;
+  backgroundUrl?: string | null;
+  hasGithub?: boolean;
 }
 
 export interface AdminUser {

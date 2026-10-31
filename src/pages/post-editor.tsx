@@ -31,7 +31,7 @@ export function PostEditorPage() {
 
   const { data: popularTags } = useQuery({
     queryKey: ['popular-tags'],
-    queryFn: () => api<{ tags: { name: string; count: number }[] }>('/api/tags'),
+    queryFn: () => api<{ tags: { name: string; count: number }[] }>('/api/posts/tags'),
     staleTime: 5 * 60 * 1000,
   });
   const [submitting, setSubmitting] = useState(false);

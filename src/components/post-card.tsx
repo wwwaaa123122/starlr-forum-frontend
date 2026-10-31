@@ -68,7 +68,7 @@ export function PostCard({ post }: { post: PostSummary }) {
           {tags.length > 0 && (
             <span className="flex flex-wrap items-center gap-1">
               {tags.slice(0, 3).map((tag) => (
-                <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=post`}>
+                <Link key={tag} to={`/?tag=${encodeURIComponent(tag)}`}>
                   <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
                     #{tag}
                   </Badge>

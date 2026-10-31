@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Camera, KeyRound, Laptop, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Upload } from 'lucide-react';
+import { Camera, Github, KeyRound, Laptop, Link2, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Unlink, Upload } from 'lucide-react';
 import { api, ApiClientError, getStoredRefreshToken } from '@/lib/api';
 import { compressImage } from '@/lib/image-compress';
 import { useAuth } from '@/lib/auth';
@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { CurrentUser } from '@/lib/auth';
@@ -32,6 +33,28 @@ export function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPw, setChangingPw] = useState(false);
+
+  // GitHub 账号绑定 / 解绑
+  const [unbindOpen, setUnbindOpen] = useState(false);
+  const [unbindPassword, setUnbindPassword] = useState('');
+  const bind = useMutation({
+    mutationFn: async () => {
+      const { bindToken } = await api<{ bindToken: string }>('/api/auth/oauth/bind-intent', { method: 'POST' });
+      window.location.href = `${(import.meta.env.VITE_API_BASE ?? '')}/oauth/start/github?redirect=${encodeURIComponent(window.location.origin)}&bind=${bindToken}`;
+    },
+    onError: () => toast.error('发起绑定失败，请重试'),
+  });
+  const unbind = useMutation({
+    mutationFn: () => api('/api/auth/oauth/github/unbind', { method: 'POST', body: JSON.stringify({ password: unbindPassword }) }),
+    onSuccess: () => {
+      setUnbindOpen(false);
+      setUnbindPassword('');
+      void refreshUser();
+      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success('已解绑 GitHub');
+    },
+    onError: (e) => toast.error(e instanceof ApiClientError ? e.message : '解绑失败'),
+  });
 
   const { data: profile } = useQuery({
     queryKey: ['me'],
@@ -209,6 +232,68 @@ export function SettingsPage() {
               {saving ? '保存中…' : '保存资料'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="size-4" /> GitHub 账号绑定
+          </CardTitle>
+          <CardDescription>
+            绑定后可以使用 GitHub 一键登录本站。解绑需要输入密码确认。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          {user.hasGithub ? (
+            <>
+              <span className="inline-flex items-center gap-1.5 rounded-none bg-emerald-500/10 px-2 py-1 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                <Github className="size-3.5" /> 已绑定
+              </span>
+              <Dialog open={unbindOpen} onOpenChange={setUnbindOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Unlink className="size-3.5" /> 解绑
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="rounded-none sm:max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>确认解绑 GitHub</DialogTitle>
+                    <DialogDescription>输入密码以确认解绑。解绑后将无法使用 GitHub 登录。</DialogDescription>
+                  </DialogHeader>
+                  <Input
+                    type="password"
+                    placeholder="登录密码"
+                    value={unbindPassword}
+                    onChange={(e) => setUnbindPassword(e.target.value)}
+                  />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setUnbindOpen(false)}>
+                      取消
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={unbind.isPending || !unbindPassword}
+                      onClick={() => unbind.mutate()}
+                    >
+                      {unbind.isPending ? '解绑中…' : '确认解绑'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          ) : (
+            <>
+              <span className="text-muted-foreground text-xs">未绑定</span>
+              <Button
+                size="sm"
+                disabled={bind.isPending}
+                onClick={() => bind.mutate()}
+              >
+                <Github className="size-3.5" /> {bind.isPending ? '跳转中…' : '绑定 GitHub'}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 

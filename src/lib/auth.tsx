@@ -27,6 +27,9 @@ export interface CurrentUser {
   role: 'user' | 'moderator' | 'admin';
   emailVerified?: boolean;
   accountStatus?: 'active' | 'unverified' | 'banned';
+  hasGithub?: boolean;
+  likesPublic?: boolean;
+  backgroundUrl?: string | null;
   postCount: number;
   replyCount: number;
   createdAt: string;

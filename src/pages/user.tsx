@@ -71,6 +71,17 @@ export function UserPage() {
   }
 
   const isSelf = currentUser?.username === profile.username;
+  const likesEnabled = isSelf || profile.likesPublic === true;
+  const [likesPage, setLikesPage] = useState(1);
+  const { data: likesData } = useQuery({
+    queryKey: ['user-likes', username, likesPage],
+    queryFn: () =>
+      api<{ posts: PostSummary[]; pagination: Pagination }>(
+        `/api/users/${encodeURIComponent(username)}/likes?page=${likesPage}&pageSize=20`,
+      ),
+    enabled: likesEnabled && Boolean(username),
+    retry: false,
+  });
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -118,6 +129,7 @@ export function UserPage() {
         <TabsList>
           <TabsTrigger value="posts">帖子（{formatNumber(profile.postCount)}）</TabsTrigger>
           <TabsTrigger value="replies">回复（{formatNumber(profile.replyCount)}）</TabsTrigger>
+          {likesEnabled && <TabsTrigger value="likes">喜欢</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="posts" className="mt-3">
@@ -160,6 +172,31 @@ export function UserPage() {
                 size="sm"
                 disabled={replyPage >= repliesData.pagination.totalPages}
                 onClick={() => setReplyPage((p) => p + 1)}
+              >
+                下一页
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="likes" className="mt-3">
+          <div>
+            {(likesData?.posts.length ?? 0) === 0 ? (
+              <p className="text-muted-foreground bg-card rounded-none border px-4 py-10 text-center text-sm">还没有喜欢的帖子</p>
+            ) : (
+              likesData!.posts.map((post) => <PostCard key={post.id} post={post} />)
+            )}
+          </div>
+          {likesData && likesData.pagination.totalPages > 1 && (
+            <div className="mt-3 flex justify-center gap-2">
+              <Button variant="outline" size="sm" disabled={likesPage <= 1} onClick={() => setLikesPage((p) => p - 1)}>
+                上一页
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={likesPage >= likesData.pagination.totalPages}
+                onClick={() => setLikesPage((p) => p + 1)}
               >
                 下一页
               </Button>

@@ -17,6 +17,7 @@ export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get('page') ?? '1');
   const sort = (searchParams.get('sort') ?? 'new') as 'new' | 'hot';
+  const tag = searchParams.get('tag') ?? '';
   const { user } = useAuth();
 
   const { data: categoriesData } = useQuery({
@@ -26,18 +27,22 @@ export function HomePage() {
   });
 
   const { data: postsData, isLoading } = useQuery({
-    queryKey: ['posts', { category: slug ?? '', sort, page }],
+    queryKey: ['posts', { category: slug ?? '', sort, page, tag }],
     queryFn: () =>
       api<{ posts: PostSummary[]; pagination: Pagination }>(
-        `/api/posts?category=${encodeURIComponent(slug ?? '')}&sort=${sort}&page=${page}&pageSize=20`,
+        `/api/posts?category=${encodeURIComponent(slug ?? '')}&sort=${sort}&page=${page}&pageSize=20${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`,
       ),
     placeholderData: keepPreviousData,
   });
 
-  const setParams = (next: Partial<{ page: number; sort: string }>) => {
+  const setParams = (next: Partial<{ page: number; sort: string; tag: string }>) => {
     const params = new URLSearchParams(searchParams);
     if (next.page !== undefined) params.set('page', String(next.page));
     if (next.sort !== undefined) params.set('sort', next.sort);
+    if (next.tag !== undefined) {
+      if (next.tag) params.set('tag', next.tag);
+      else params.delete('tag');
+    }
     setSearchParams(params);
     window.scrollTo({ top: 0 });
   };
@@ -55,6 +60,11 @@ export function HomePage() {
               <TabsTrigger value="hot">热门</TabsTrigger>
             </TabsList>
           </Tabs>
+          {tag && (
+            <Button variant="outline" size="sm" onClick={() => setParams({ tag: '', page: 1 })}>
+              标签：{tag} ✕
+            </Button>
+          )}
           {user && (
             <Button asChild size="sm">
               <Link to="/new">

@@ -28,6 +28,7 @@ export function UserPage() {
   const { username = '' } = useParams();
   const { user: currentUser } = useAuth();
   const [replyPage, setReplyPage] = useState(1);
+  const [likesPage, setLikesPage] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: ['user', username],
@@ -72,7 +73,6 @@ export function UserPage() {
 
   const isSelf = currentUser?.username === profile.username;
   const likesEnabled = isSelf || profile.likesPublic === true;
-  const [likesPage, setLikesPage] = useState(1);
   const { data: likesData } = useQuery({
     queryKey: ['user-likes', username, likesPage],
     queryFn: () =>

@@ -43,6 +43,15 @@ function Button({
 }: React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & { asChild?: boolean; loading?: boolean }) {
   const Comp = asChild ? Slot : 'button';
+  // asChild 时子节点必须是单个元素（Slot 严格校验），因此不在 children 前插入 null 兄弟节点
+  const content = asChild ? (
+    children
+  ) : (
+    <>
+      {loading ? <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
+      {children}
+    </>
+  );
   return (
     <Comp
       data-slot="button"
@@ -52,9 +61,7 @@ function Button({
       disabled={asChild ? undefined : disabled || loading}
       {...props}
     >
-      {/* 统一提交态：loading 时左侧转圈 + 禁用，各页面不再各自拼「xx中…」文案 */}
-      {loading && !asChild ? <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
-      {children}
+      {content}
     </Comp>
   );
 }

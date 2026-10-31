@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, FileText, MessageSquare } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PostCard, PostCardSkeleton } from '@/components/post-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -54,6 +54,20 @@ export function UserPage() {
     enabled: Boolean(username),
   });
 
+  // 注意：所有 hooks 必须在任何提前 return 之前调用（React Hooks 规则）
+  const likesEnabled = Boolean(username);
+  const { data: likesData, error: likesError } = useQuery({
+    queryKey: ['user-likes', username, likesPage],
+    queryFn: () =>
+      api<{ posts: PostSummary[]; pagination: Pagination }>(
+        `/api/users/${encodeURIComponent(username)}/likes?page=${likesPage}&pageSize=20`,
+      ),
+    enabled: likesEnabled,
+    retry: false,
+  });
+  const likesForbidden =
+    likesError instanceof ApiClientError && likesError.code === 'LIKES_PRIVATE';
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6">
@@ -72,16 +86,7 @@ export function UserPage() {
   }
 
   const isSelf = currentUser?.username === profile.username;
-  const likesEnabled = isSelf || profile.likesPublic === true;
-  const { data: likesData } = useQuery({
-    queryKey: ['user-likes', username, likesPage],
-    queryFn: () =>
-      api<{ posts: PostSummary[]; pagination: Pagination }>(
-        `/api/users/${encodeURIComponent(username)}/likes?page=${likesPage}&pageSize=20`,
-      ),
-    enabled: likesEnabled && Boolean(username),
-    retry: false,
-  });
+  const likesVisible = isSelf || profile.likesPublic === true || !likesForbidden;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -129,7 +134,7 @@ export function UserPage() {
         <TabsList>
           <TabsTrigger value="posts">帖子（{formatNumber(profile.postCount)}）</TabsTrigger>
           <TabsTrigger value="replies">回复（{formatNumber(profile.replyCount)}）</TabsTrigger>
-          {likesEnabled && <TabsTrigger value="likes">喜欢</TabsTrigger>}
+          {likesVisible && <TabsTrigger value="likes">喜欢</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="posts" className="mt-3">

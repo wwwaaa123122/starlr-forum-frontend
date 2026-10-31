@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-medium transition-all active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive cursor-pointer",
   {
     variants: {
       variant: {
@@ -35,10 +36,27 @@ function Button({
   variant,
   size,
   asChild = false,
+  loading = false,
+  disabled,
+  children,
   ...props
-}: React.ComponentProps<'button'> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+}: React.ComponentProps<'button'> &
+  VariantProps<typeof buttonVariants> & { asChild?: boolean; loading?: boolean }) {
   const Comp = asChild ? Slot : 'button';
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+  return (
+    <Comp
+      data-slot="button"
+      data-loading={loading || undefined}
+      aria-busy={loading || undefined}
+      className={cn(buttonVariants({ variant, size, className }), loading && 'cursor-progress')}
+      disabled={asChild ? undefined : disabled || loading}
+      {...props}
+    >
+      {/* 统一提交态：loading 时左侧转圈 + 禁用，各页面不再各自拼「xx中…」文案 */}
+      {loading && !asChild ? <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden /> : null}
+      {children}
+    </Comp>
+  );
 }
 
 export { Button, buttonVariants };

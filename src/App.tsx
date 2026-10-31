@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { SiteFooter, SiteHeader } from '@/components/layout/site-header';
 import { CookieConsent } from '@/components/cookie-consent';
 import { initConsent } from '@/lib/consent';
+import { ScrollToTop } from '@/lib/use-page-title';
 import { HomePage } from '@/pages/home';
 import { CategoriesPage } from '@/pages/categories';
 import { PostDetailPage } from '@/pages/post-detail';
@@ -25,9 +26,17 @@ export default function App() {
   initConsent();
   return (
     <div className="flex min-h-dvh flex-col">
+      <ScrollToTop />
+      {/* 键盘用户第一个 Tab 即可跳过导航直达正文，与全站统一焦点样式配套 */}
+      <a
+        href="#main"
+        className="bg-primary text-primary-foreground sr-only rounded-none px-3 py-2 text-sm focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+      >
+        跳到主要内容
+      </a>
       <SiteHeader />
       <UnverifiedBanner />
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />

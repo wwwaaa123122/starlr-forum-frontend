@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
+import { PageContainer, PageMessage } from '@/components/layout/page';
+import { Button } from '@/components/ui/button';
 
 export default function OAuthCallback() {
   const { oauthExchange } = useAuth();
@@ -10,6 +13,7 @@ export default function OAuthCallback() {
   const [params] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
+  usePageTitle('GitHub 登录');
 
   useEffect(() => {
     if (started.current) return;
@@ -32,20 +36,28 @@ export default function OAuthCallback() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
-        <h1 className="text-lg font-semibold">GitHub 登录未完成</h1>
-        <p className="text-muted-foreground max-w-sm text-sm">{error}</p>
-        <Link to="/login" className="text-primary text-sm underline-offset-4 hover:underline">
-          返回登录
-        </Link>
-      </div>
+      <PageContainer width="md">
+        <PageMessage
+          icon={<Loader2 className="text-muted-foreground size-10" />}
+          title="GitHub 登录未完成"
+          description={error}
+          action={
+            <Button asChild variant="outline" size="sm">
+              <Link to="/login">返回登录</Link>
+            </Button>
+          }
+          className="py-24"
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3">
-      <Loader2 className="text-primary animate-spin" size={28} />
-      <p className="text-muted-foreground text-sm">正在完成 GitHub 登录…</p>
-    </div>
+    <PageContainer width="md">
+      <div className="flex flex-col items-center justify-center gap-3 py-24">
+        <Loader2 className="text-primary animate-spin" size={28} />
+        <p className="text-muted-foreground text-sm">正在完成 GitHub 登录…</p>
+      </div>
+    </PageContainer>
   );
 }

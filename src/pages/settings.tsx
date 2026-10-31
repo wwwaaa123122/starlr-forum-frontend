@@ -2,16 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Camera, Github, KeyRound, Laptop, Link2, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Unlink, Upload } from 'lucide-react';
+import { Camera, Eye, Github, KeyRound, Laptop, Link2, LogOut, MonitorSmartphone, ShieldCheck, Smartphone, Tablet, Unlink, Upload } from 'lucide-react';
 import { api, ApiClientError, getStoredRefreshToken } from '@/lib/api';
 import { compressImage } from '@/lib/image-compress';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
 import { timeAgo } from '@/lib/utils';
+import { PageContainer, PageHeader } from '@/components/layout/page';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
@@ -24,9 +28,12 @@ export function SettingsPage() {
   const { user, loading, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  usePageTitle('账号设置');
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
+  const [likesPublic, setLikesPublic] = useState(false);
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -110,6 +117,7 @@ export function SettingsPage() {
     if (profile?.user) {
       setNickname(profile.user.nickname);
       setBio(profile.user.bio ?? '');
+      setLikesPublic(Boolean(profile.user.likesPublic));
     }
   }, [profile]);
 
@@ -131,8 +139,24 @@ export function SettingsPage() {
     }
   };
 
-  const uploadAvatar = async (raw: File) => {
-    setUploading(true);
+  /** 隐私偏好：喜欢列表是否公开（后端 PATCH /api/me 的 likesPublic） */
+  const savePrivacy = async (next: boolean) => {
+    setLikesPublic(next);
+    setSavingPrivacy(true);
+    try {
+      await api('/api/me', { method: 'PATCH', body: { likesPublic: next } });
+      toast.success(next ? '点赞列表已公开' : '点赞列表已隐藏');
+      void queryClient.invalidateQueries({ queryKey: ['me'] });
+      await refreshUser();
+    } catch (e) {
+      setLikesPublic(!next);
+      toast.error(e instanceof ApiClientError ? e.message : '保存失败');
+    } finally {
+      setSavingPrivacy(false);
+    }
+  };
+
+  const uploadAvatar = async (raw: File) => {    setUploading(true);
     try {
       const { file } = await compressImage(raw);
       const form = new FormData();
@@ -157,15 +181,15 @@ export function SettingsPage() {
 
   if (loading || !user) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-6">
-        <Skeleton className="h-72 w-full rounded-none" />
-      </div>
+      <PageContainer width="narrow">
+        <Skeleton className="h-72 w-full" />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-      <h1 className="text-xl font-bold">账号设置</h1>
+    <PageContainer width="narrow" className="space-y-6">
+      <PageHeader title="账号设置" description="资料、登录方式与设备管理。" className="mb-0" />
 
       <Card>
         <CardHeader>
@@ -192,8 +216,8 @@ export function SettingsPage() {
                   if (file) void uploadAvatar(file);
                 }}
               />
-              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                <Camera className="size-4" /> {uploading ? '上传中…' : '更换头像'}
+              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} loading={uploading}>
+                <Camera className="size-4" /> 更换头像
               </Button>
               <p className="text-muted-foreground mt-1.5 flex items-center gap-1 text-xs">
                 <Upload className="size-3" /> JPG/PNG/GIF/WEBP，最大 5MB
@@ -228,9 +252,35 @@ export function SettingsPage() {
           )}
 
           <div className="flex justify-end">
-            <Button onClick={() => void save()} disabled={saving}>
-              {saving ? '保存中…' : '保存资料'}
+            <Button onClick={() => void save()} loading={saving}>
+              保存资料
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Eye className="size-4" /> 隐私
+          </CardTitle>
+          <CardDescription>控制其他访客能看到什么。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Label htmlFor="likes-public">公开我的点赞列表</Label>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                关闭后，主页的「喜欢」标签页只有你自己可见；其他人访问时不会显示。
+              </p>
+            </div>
+            <Switch
+              id="likes-public"
+              checked={likesPublic}
+              disabled={savingPrivacy}
+              onCheckedChange={(v) => void savePrivacy(v)}
+              aria-label="公开我的点赞列表"
+            />
           </div>
         </CardContent>
       </Card>
@@ -247,9 +297,9 @@ export function SettingsPage() {
         <CardContent className="flex flex-wrap items-center gap-3">
           {user.hasGithub ? (
             <>
-              <span className="inline-flex items-center gap-1.5 rounded-none bg-emerald-500/10 px-2 py-1 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+              <Badge variant="success" className="gap-1.5 font-normal">
                 <Github className="size-3.5" /> 已绑定
-              </span>
+              </Badge>
               <Dialog open={unbindOpen} onOpenChange={setUnbindOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -273,10 +323,11 @@ export function SettingsPage() {
                     </Button>
                     <Button
                       variant="destructive"
-                      disabled={unbind.isPending || !unbindPassword}
+                      loading={unbind.isPending}
+                      disabled={!unbindPassword}
                       onClick={() => unbind.mutate()}
                     >
-                      {unbind.isPending ? '解绑中…' : '确认解绑'}
+                      确认解绑
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -287,10 +338,10 @@ export function SettingsPage() {
               <span className="text-muted-foreground text-xs">未绑定</span>
               <Button
                 size="sm"
-                disabled={bind.isPending}
+                loading={bind.isPending}
                 onClick={() => bind.mutate()}
               >
-                <Github className="size-3.5" /> {bind.isPending ? '跳转中…' : '绑定 GitHub'}
+                <Github className="size-3.5" /> 绑定 GitHub
               </Button>
             </>
           )}
@@ -320,9 +371,9 @@ export function SettingsPage() {
                     <p className="flex flex-wrap items-center gap-2 font-medium">
                       {dev.label}
                       {sess.current ? (
-                        <span className="inline-flex items-center gap-1 rounded-none bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-normal text-emerald-600 dark:text-emerald-400">
+                        <Badge variant="success" className="gap-1 px-1.5 py-0 font-normal">
                           <ShieldCheck className="size-3" /> 当前设备
-                        </span>
+                        </Badge>
                       ) : null}
                     </p>
                     <p className="text-muted-foreground mt-0.5 truncate text-xs">
@@ -335,7 +386,7 @@ export function SettingsPage() {
                   </div>
                 </div>
                 {!sess.current && (
-                  <Button variant="outline" size="sm" onClick={() => revokeMutation.mutate(sess.id)} disabled={revokeMutation.isPending}>
+                  <Button variant="outline" size="sm" onClick={() => revokeMutation.mutate(sess.id)} loading={revokeMutation.isPending}>
                     <LogOut className="size-3.5" /> 吊销
                   </Button>
                 )}
@@ -348,7 +399,7 @@ export function SettingsPage() {
               <Button
                 variant="destructive"
                 size="sm"
-                disabled={revokeOthersMutation.isPending}
+                loading={revokeOthersMutation.isPending}
                 onClick={() => revokeOthersMutation.mutate()}
               >
                 吊销其他所有会话（{(sessions?.total ?? 0) - 1}）
@@ -422,8 +473,8 @@ export function SettingsPage() {
                 autoComplete="new-password"
               />
             </div>
-            <Button type="submit" disabled={changingPw}>
-              <KeyRound className="size-4" /> {changingPw ? '提交中…' : '修改密码'}
+            <Button type="submit" loading={changingPw}>
+              <KeyRound className="size-4" /> 修改密码
             </Button>
           </form>
         </CardContent>
@@ -447,7 +498,7 @@ export function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
 

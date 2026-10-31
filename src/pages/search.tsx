@@ -1,31 +1,44 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Search as SearchIcon } from 'lucide-react';
 import { api } from '@/lib/api';
+import { usePageTitle } from '@/lib/use-page-title';
+import { assetUrl } from '@/lib/base-url';
 import { PostCard, PostCardSkeleton } from '@/components/post-card';
 import { PaginationControls } from '@/components/pagination-controls';
+import { PageContainer, PageHeader, PageMessage, PageSection } from '@/components/layout/page';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Pagination, PostSummary, UserProfile } from '@/lib/types';
-import { assetUrl } from '@/lib/base-url';
+import type { Category, Pagination, PostSummary, UserProfile } from '@/lib/types';
+
+const ALL = '__all__';
 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get('q') ?? '';
   const type = (searchParams.get('type') ?? 'post') as 'post' | 'user';
-  const sort = (searchParams.get('sort') ?? 'relevant') as 'relevant' | 'new';
+  const sort = (searchParams.get('sort') ?? 'relevant') as 'relevant' | 'new' | 'hot';
+  const category = searchParams.get('category') ?? '';
   const page = Number(searchParams.get('page') ?? '1');
   const [input, setInput] = useState(q);
+  usePageTitle(q ? `搜索「${q}」` : '搜索');
 
-  const { data: postsData, isLoading: postsLoading } = useQuery({
-    queryKey: ['search', 'posts', q, sort, page],
+  // 分类筛选数据：后端 /api/search 一直支持 category，此前前端没有入口
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api<{ categories: Category[] }>('/api/categories'),
+    staleTime: 60_000,
+  });
+
+  const { data: postsData, isLoading: postsLoading, isError: postsError, refetch: refetchPosts } = useQuery({
+    queryKey: ['search', 'posts', q, sort, category, page],
     queryFn: () =>
       api<{ posts: PostSummary[]; pagination: Pagination; mode: string }>(
-        `/api/search?q=${encodeURIComponent(q)}&type=post&sort=${sort}&page=${page}&pageSize=20`,
+        `/api/search?q=${encodeURIComponent(q)}&type=post&sort=${sort}&page=${page}&pageSize=20${category ? `&category=${encodeURIComponent(category)}` : ''}`,
       ),
     enabled: Boolean(q) && type === 'post',
     placeholderData: keepPreviousData,
@@ -51,14 +64,17 @@ export function SearchPage() {
 
   const setParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    params.set(key, value);
+    if (!value || value === ALL) params.delete(key);
+    else params.set(key, value);
     if (key !== 'page') params.set('page', '1');
     setSearchParams(params);
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
-      <form onSubmit={submit} className="mb-4 flex gap-2">
+    <PageContainer>
+      <PageHeader title="搜索" description="按标题、正文或用户查找；支持分类与热门排序。" />
+
+      <form onSubmit={submit} className="mb-3 flex gap-2">
         <div className="relative flex-1">
           <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
@@ -66,6 +82,7 @@ export function SearchPage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="搜索帖子标题、正文或用户…"
             className="pl-9"
+            aria-label="搜索关键词"
             autoFocus
           />
         </div>
@@ -81,35 +98,68 @@ export function SearchPage() {
         </Tabs>
 
         {type === 'post' && (
-          <Select value={sort} onValueChange={(v) => setParam('sort', v)}>
-            <SelectTrigger size="sm" className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="relevant">相关度</SelectItem>
-              <SelectItem value="new">最新发布</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={category || ALL} onValueChange={(v) => setParam('category', v)}>
+              <SelectTrigger size="sm" className="w-36">
+                <SelectValue placeholder="全部分类" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>全部分类</SelectItem>
+                {(categoriesData?.categories ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.slug}>
+                    {c.icon} {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sort} onValueChange={(v) => setParam('sort', v)}>
+              <SelectTrigger size="sm" className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevant">相关度</SelectItem>
+                <SelectItem value="new">最新发布</SelectItem>
+                <SelectItem value="hot">最热</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )}
       </div>
 
       {!q ? (
-        <p className="text-muted-foreground py-16 text-center text-sm">输入关键词开始搜索</p>
+        <PageMessage
+          icon={<SearchIcon className="size-8" />}
+          title="输入关键词开始搜索"
+          description="例如一个技术名词、帖子标题的一部分，或某位用户的昵称。"
+        />
       ) : type === 'post' ? (
         <>
-          <div className="bg-card rounded-none border">
+          <PageSection>
             {postsLoading ? (
               <>
                 <PostCardSkeleton />
                 <PostCardSkeleton />
                 <PostCardSkeleton />
               </>
+            ) : postsError ? (
+              <PageMessage
+                title="搜索失败"
+                description="请求过于频繁或服务暂时不可用。"
+                action={
+                  <Button variant="outline" size="sm" onClick={() => void refetchPosts()}>
+                    重试
+                  </Button>
+                }
+              />
             ) : (postsData?.posts.length ?? 0) === 0 ? (
-              <p className="text-muted-foreground px-4 py-16 text-center text-sm">没有找到相关帖子</p>
+              <PageMessage
+                title="没有找到相关帖子"
+                description={category ? '试试取消分类筛选，或换一个关键词。' : '换一个关键词，或减少筛选条件。'}
+              />
             ) : (
               postsData!.posts.map((post) => <PostCard key={post.id} post={post} />)
             )}
-          </div>
+          </PageSection>
           <PaginationControls pagination={postsData?.pagination} onPageChange={(p) => setParam('page', String(p))} />
           {postsData?.mode && (
             <p className="text-muted-foreground text-center text-xs">
@@ -119,24 +169,24 @@ export function SearchPage() {
         </>
       ) : (
         <>
-          <div className="bg-card rounded-none border">
+          <PageSection>
             {usersLoading ? (
-              <p className="text-muted-foreground px-4 py-16 text-center text-sm">搜索中…</p>
+              <p className="text-muted-foreground px-4 py-14 text-center text-sm">搜索中…</p>
             ) : (usersData?.users.length ?? 0) === 0 ? (
-              <p className="text-muted-foreground px-4 py-16 text-center text-sm">没有找到相关用户</p>
+              <PageMessage title="没有找到相关用户" description="可以试试用户名、昵称，或直接输入 UID。" />
             ) : (
               usersData!.users.map((u) => (
                 <Link
                   key={u.id}
                   to={`/users/${u.username}`}
-                  className="hover:bg-accent/40 flex items-center gap-3 border-b px-4 py-3.5 last:border-b-0"
+                  className="row-interactive flex items-center gap-3 border-b px-4 py-3.5 last:border-b-0"
                 >
                   <Avatar className="size-10 border">
                     <AvatarImage src={assetUrl(u.avatarUrl)} alt={u.username} />
                     <AvatarFallback>{u.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium">
+                    <div className="text-sm font-medium">
                       {u.nickname} <span className="text-muted-foreground text-xs">@{u.username}</span>
                     </div>
                     {u.bio && <p className="text-muted-foreground line-clamp-1 text-xs">{u.bio}</p>}
@@ -147,10 +197,10 @@ export function SearchPage() {
                 </Link>
               ))
             )}
-          </div>
+          </PageSection>
           <PaginationControls pagination={usersData?.pagination} onPageChange={(p) => setParam('page', String(p))} />
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

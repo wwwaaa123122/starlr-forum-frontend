@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck, Heart, MessageSquare, ShieldAlert, Sparkles, Star, AtSign } from 'lucide-react';
+import { AtSign, Bell, CheckCheck, Heart, MessageSquare, ShieldAlert, Sparkles, Star } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
 import { timeAgo } from '@/lib/utils';
+import { PageContainer, PageHeader, PageMessage, PageSection } from '@/components/layout/page';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
+import { PaginationControls } from '@/components/pagination-controls';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { NotificationItem, Pagination } from '@/lib/types';
 
 const TYPE_META: Record<string, { icon: typeof Bell; label: string }> = {
@@ -22,15 +26,16 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string }> = {
 
 export function NotificationsPage() {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  usePageTitle('通知');
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['notifications', 'list', unreadOnly],
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['notifications', 'list', unreadOnly, page],
     queryFn: () =>
       api<{ notifications: NotificationItem[]; unread: number; pagination: Pagination }>(
-        `/api/notifications?pageSize=30${unreadOnly ? '&unreadOnly=1' : ''}`,
+        `/api/notifications?page=${page}&pageSize=30${unreadOnly ? '&unreadOnly=1' : ''}`,
       ),
     enabled: Boolean(user),
     refetchInterval: 30_000,
@@ -39,50 +44,67 @@ export function NotificationsPage() {
   const markRead = useMutation({
     mutationFn: (ids?: string[]) =>
       api('/api/notifications/read', { method: 'POST', body: ids ? { ids } : {} }),
-    onSuccess: () => {
+    onSuccess: (_res, ids) => {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      if (!ids) void queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 
-  if (!loading && !user) {
-    navigate('/login');
-    return null;
-  }
+  if (!loading && !user) return <Navigate to="/login" replace />;
 
   const notifications = data?.notifications ?? [];
+  const unread = data?.unread ?? 0;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-bold">
-          <Bell className="size-5" /> 通知
-          {(data?.unread ?? 0) > 0 && (
-            <span className="bg-primary text-primary-foreground rounded-none px-2 py-0.5 text-xs">
-              {data!.unread} 条未读
-            </span>
-          )}
-        </h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setUnreadOnly((v) => !v)}>
-            {unreadOnly ? '显示全部' : '只看未读'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => markRead.mutate(undefined)}>
-            <CheckCheck className="size-4" /> 全部已读
-          </Button>
-        </div>
-      </div>
-
-      <div className="bg-card rounded-none border">
-        {isLoading ? (
+    <PageContainer width="narrow">
+      <PageHeader
+        title="通知"
+        icon={<Bell className="size-5" />}
+        description={unread > 0 ? `${unread} 条未读` : '全部已读'}
+        actions={
           <>
-            <Skeleton className="m-4 h-12" />
-            <Skeleton className="m-4 h-12" />
-            <Skeleton className="m-4 h-12" />
+            <Button
+              variant={unreadOnly ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setUnreadOnly((v) => !v);
+                setPage(1);
+              }}
+            >
+              {unreadOnly ? '显示全部' : '只看未读'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              loading={markRead.isPending && markRead.variables === undefined}
+              disabled={unread === 0}
+              onClick={() => markRead.mutate(undefined)}
+            >
+              <CheckCheck className="size-4" /> 全部已读
+            </Button>
           </>
+        }
+      />
+
+      <PageSection>
+        {isLoading ? (
+          <ListSkeleton rows={3} />
+        ) : isError ? (
+          <PageMessage
+            title="通知加载失败"
+            description="网络或服务暂时不可用，可以稍后重试。"
+            action={
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                重新加载
+              </Button>
+            }
+          />
         ) : notifications.length === 0 ? (
-          <p className="text-muted-foreground px-4 py-12 text-center text-sm">
-            {unreadOnly ? '没有未读通知 🎉' : '暂无通知'}
-          </p>
+          <PageMessage
+            icon={<Bell className="size-8" />}
+            title={unreadOnly ? '没有未读通知' : '暂无通知'}
+            description={unreadOnly ? '都处理完了，切回「显示全部」看看历史消息。' : '有人回复、提及或点赞你时，会出现在这里。'}
+          />
         ) : (
           notifications.map((n) => {
             const meta = TYPE_META[n.type] ?? TYPE_META.system;
@@ -103,7 +125,7 @@ export function NotificationsPage() {
             return (
               <div
                 key={n.id}
-                className={`flex items-start gap-3 border-b px-4 py-3.5 last:border-b-0 ${read ? '' : 'bg-primary/5'}`}
+                className={`row-interactive flex items-start gap-3 border-b px-4 py-3.5 last:border-b-0 ${read ? '' : 'bg-primary/5'}`}
               >
                 <div className={`mt-0.5 shrink-0 ${read ? 'text-muted-foreground' : 'text-primary'}`}>
                   <Icon className="size-4" />
@@ -146,16 +168,22 @@ export function NotificationsPage() {
                   )}
                   <span className="text-muted-foreground text-xs">{timeAgo(n.createdAt)}</span>
                 </div>
-                {!read && (
+                {!read ? (
                   <Button variant="ghost" size="sm" className="h-7 shrink-0" onClick={() => markRead.mutate([n.id])}>
-                    已读
+                    标为已读
                   </Button>
+                ) : (
+                  <Badge variant="secondary" className="mt-1 shrink-0 font-normal">
+                    已读
+                  </Badge>
                 )}
               </div>
             );
           })
         )}
-      </div>
-    </div>
+      </PageSection>
+
+      <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+    </PageContainer>
   );
 }

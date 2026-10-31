@@ -30,7 +30,14 @@ export function PaginationControls({ pagination, onPageChange }: PaginationContr
         </>
       )}
       {pages.map((p) => (
-        <Button key={p} variant={p === page ? 'default' : 'ghost'} size="sm" onClick={() => onPageChange(p)}>
+        <Button
+          key={p}
+          variant={p === page ? 'default' : 'ghost'}
+          size="sm"
+          aria-current={p === page ? 'page' : undefined}
+          aria-label={`第 ${p} 页`}
+          onClick={() => onPageChange(p)}
+        >
           {p}
         </Button>
       ))}

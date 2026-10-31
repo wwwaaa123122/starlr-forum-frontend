@@ -3,6 +3,7 @@
  * 按需加载脚本，渲染在容器内；site key 未配置时自动隐藏（本地开发）。
  */
 import { useEffect, useRef, useState } from 'react';
+import { loadSiteConfig } from '@/lib/site-config';
 
 declare global {
   interface Window {
@@ -84,17 +85,8 @@ export function Turnstile({ siteKey, onToken }: TurnstileProps) {
   );
 }
 
-/** 获取站点 Turnstile site key（/api/config） */
-let configCache: { turnstileSiteKey: string | null } | null = null;
-
+/** 获取站点 Turnstile site key（复用 lib/site-config 的 /api/config 缓存） */
 export async function fetchSiteConfig(): Promise<{ turnstileSiteKey: string | null }> {
-  if (configCache) return configCache;
-  try {
-    // 跨域部署时拼接 API 基址（同源为空串）
-    const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}/api/config`);
-    configCache = (await res.json()) as { turnstileSiteKey: string | null };
-  } catch {
-    configCache = { turnstileSiteKey: null };
-  }
-  return configCache;
+  const { turnstileSiteKey } = await loadSiteConfig();
+  return { turnstileSiteKey };
 }

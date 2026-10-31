@@ -16,7 +16,7 @@ export function PostCard({ post }: { post: PostSummary }) {
   const authorName = post.authorName ?? '匿名';
   const excerpt = post.excerpt ? stripMarkdown(post.excerpt) : '';
   return (
-    <article className="hover:bg-accent/40 group flex gap-3 border-b px-4 py-3.5 transition-colors last:border-b-0">
+    <article className="row-interactive group flex gap-3 border-b px-4 py-3.5 last:border-b-0">
       <Link to={`/users/${encodeURIComponent(authorName)}`} className="shrink-0" aria-label={`${authorName} 的主页`}>
         <Avatar className="size-9 border">
           <AvatarImage src={assetUrl(post.authorAvatar)} alt={authorName} />

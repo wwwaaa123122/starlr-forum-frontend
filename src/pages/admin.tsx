@@ -5,7 +5,9 @@ import { toast } from 'sonner';
 import { Ban, CheckCircle, Eye, FileText, Flag, ImagePlus, Mic, MicOff, Pencil, Plus, RotateCcw, ScrollText, SearchCheck, Send, ShieldCheck, Trash2, TrendingUp, User, Users, X } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
 import { formatNumber, timeAgo } from '@/lib/utils';
+import { PageContainer, PageHeader, PageMessage } from '@/components/layout/page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,7 +75,7 @@ function StatCards() {
     <div className="space-y-4">
     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {items.map(({ label, value, icon: Icon }) => (
-        <div key={label} className="bg-card flex items-center gap-3 rounded-none border p-4">
+        <div key={label} className="surface flex items-center gap-3 p-4">
           <div className="bg-primary/10 text-primary rounded-none p-2">
             <Icon className="size-4" />
           </div>
@@ -86,7 +88,7 @@ function StatCards() {
       </div>
 
       {/* 浏览量排行 */}
-      <div className="bg-card rounded-none border">
+      <div className="surface">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h3 className="text-sm font-semibold">浏览量排行</h3>
           <span className="text-muted-foreground text-xs">Top 10</span>
@@ -258,7 +260,7 @@ function UsersTab() {
         placeholder="搜索 UID / 用户名 / 昵称 / 邮箱…"
         className="max-w-sm"
       />
-      <div className="bg-card rounded-none border">
+      <div className="surface">
         <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
@@ -555,7 +557,7 @@ function PostsTab() {
         </SelectContent>
       </Select>
 
-      <div className="bg-card rounded-none border">
+      <div className="surface">
         <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
@@ -762,7 +764,7 @@ function CategoriesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card rounded-none border">
+      <div className="surface">
         <div className="flex justify-end px-4 pt-3">
           <Button
             variant="outline"
@@ -842,7 +844,7 @@ function CategoriesTab() {
         </Table>
       </div>
       {isAdmin && (
-        <div className="bg-card space-y-3 rounded-none border p-4">
+        <div className="surface space-y-3 p-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
             <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
@@ -939,10 +941,10 @@ function ReportsTab() {
         {isLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (data?.reports.length ?? 0) === 0 ? (
-          <p className="text-muted-foreground bg-card rounded-none border px-4 py-10 text-center text-sm">没有举报记录</p>
+          <p className="text-muted-foreground surface px-4 py-10 text-center text-sm">没有举报记录</p>
         ) : (
           data!.reports.map((r) => (
-            <div key={r.id} className="bg-card rounded-none border p-4">
+            <div key={r.id} className="surface p-4">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Badge variant="outline">{r.targetType === 'post' ? '帖子' : r.targetType === 'reply' ? '回复' : '用户'}</Badge>
                 <Badge variant={r.reason === 'spam' ? 'secondary' : 'destructive'}>
@@ -1132,7 +1134,7 @@ function ModeratorsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card space-y-3 rounded-none border p-4">
+      <div className="surface space-y-3 p-4">
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="用户名或 UID" />
           <Button onClick={() => void assign()} disabled={busy || pickedCats.length === 0}>
@@ -1166,7 +1168,7 @@ function ModeratorsTab() {
       </div>
 
       {(mods?.siteWide ?? []).length > 0 && (
-        <div className="bg-card overflow-x-auto rounded-none border">
+        <div className="surface overflow-x-auto">
           <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
@@ -1211,7 +1213,7 @@ function ModeratorsTab() {
         </div>
       )}
 
-      <div className="bg-card overflow-x-auto rounded-none border">
+      <div className="surface overflow-x-auto">
         <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
@@ -1317,7 +1319,7 @@ function AdminsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card rounded-none border p-4">
+      <div className="surface p-4">
         <h2 className="mb-1 text-sm font-semibold">授权新管理员</h2>
         <p className="text-muted-foreground mb-3 text-xs">
           输入目标用户的 UID（注册时自动分配，管理员为 UID 1），即可授予管理员或版主权限。
@@ -1370,7 +1372,7 @@ function AdminsTab() {
         </div>
       </div>
 
-      <div className="bg-card rounded-none border">
+      <div className="surface">
         <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
@@ -1473,14 +1475,14 @@ function ViewsTab() {
           { label: '近 30 天', value: t?.month ?? 0 },
           { label: '累计浏览（帖子）', value: t?.allTime ?? 0 },
         ].map((item) => (
-          <div key={item.label} className="bg-card rounded-none border p-3">
+          <div key={item.label} className="surface p-3">
             <div className="text-muted-foreground text-xs">{item.label}</div>
             <div className="mt-1 text-xl font-semibold">{formatNumber(item.value)}</div>
           </div>
         ))}
       </div>
 
-      <div className="bg-card rounded-none border p-4">
+      <div className="surface p-4">
         <h3 className="text-sm font-semibold">近 14 天趋势</h3>
         <div className="mt-3 flex h-32 items-end gap-1.5">
           {(data?.daily ?? []).map((d) => (
@@ -1496,7 +1498,7 @@ function ViewsTab() {
         </div>
       </div>
 
-      <div className="bg-card rounded-none border p-4">
+      <div className="surface p-4">
         <h3 className="text-sm font-semibold">近 7 天热门帖子</h3>
         {(data?.top ?? []).length === 0 ? (
           <p className="text-muted-foreground mt-3 text-sm">暂无数据</p>
@@ -1517,7 +1519,7 @@ function ViewsTab() {
 
       <div>
         <h3 className="mb-2 text-sm font-semibold">最近浏览记录（最近 50 条）</h3>
-        <div className="bg-card overflow-x-auto rounded-none border">
+        <div className="surface overflow-x-auto">
           <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
@@ -1595,7 +1597,7 @@ function NotificationsTab() {
   };
 
   return (
-    <div className="bg-card space-y-4 rounded-none border p-4">
+    <div className="surface space-y-4 p-4">
       <div>
         <h3 className="text-sm font-semibold">发送系统通知</h3>
         <p className="text-muted-foreground mt-0.5 text-xs">
@@ -1654,7 +1656,7 @@ function AuditTab() {
   });
 
   return (
-    <div className="bg-card rounded-none border">
+    <div className="surface">
       {/* 移动端横向滑动查看，避免列内容被挤成多行 */}
       <Table className="min-w-[900px]">
         <TableHeader>
@@ -1806,7 +1808,7 @@ function SeoPushesTab() {
         </Button>
       </div>
 
-      <div className="bg-card border overflow-x-auto">
+      <div className="surface overflow-x-auto">
         <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow>
@@ -2013,7 +2015,7 @@ function ServicesTab() {
   return (
     <div className="space-y-4">
       {services.map((svc) => (
-        <div key={svc.key} className="bg-card space-y-3 rounded-none border p-4">
+        <div key={svc.key} className="surface space-y-3 p-4">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">{svc.label}</h3>
             <Badge variant={svc.configured ? 'default' : 'outline'}>{svc.configured ? '已配置' : '未配置'}</Badge>
@@ -2127,7 +2129,7 @@ function ServicesTab() {
       ))}
 
       {/* 初始化配置 */}
-      <div className="bg-card space-y-3 rounded-none border p-4">
+      <div className="surface space-y-3 p-4">
         <h3 className="text-sm font-semibold">初始化配置</h3>
         <div className="flex items-center justify-between">
           <Label className="text-xs">开放注册</Label>
@@ -2151,7 +2153,7 @@ function ServicesTab() {
       </div>
 
       {/* 站点信息 */}
-      <div className="bg-card space-y-3 rounded-none border p-4">
+      <div className="surface space-y-3 p-4">
         <h3 className="text-sm font-semibold">站点信息</h3>
         {([['site_name', '站点名称'], ['site_tagline', '标语'], ['site_description', '站点描述'], ['site_footer', '页脚文案']] as const).map(([k, label]) => (
           <div key={k} className="flex items-center gap-2">
@@ -2211,7 +2213,7 @@ function SsoTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card space-y-3 rounded-none border p-4">
+      <div className="surface space-y-3 p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">SSO 登录同步</h3>
           <Switch checked={enabled} onCheckedChange={setEnabled} />
@@ -2223,7 +2225,7 @@ function SsoTab() {
         <Button size="sm" disabled={saveMut.isPending} onClick={() => saveMut.mutate()}>保存</Button>
       </div>
 
-      <div className="bg-card rounded-none border">
+      <div className="surface">
         <div className="text-muted-foreground border-b px-4 py-2 text-xs">最近同步（20 条）</div>
         <Table>
           <TableHeader>
@@ -2257,33 +2259,41 @@ function SsoTab() {
 export function AdminPage() {
   const { user, isModerator, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  usePageTitle('管理后台');
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-6">
-        <Skeleton className="h-96 w-full rounded-none" />
-      </div>
+      <PageContainer width="wide">
+        <Skeleton className="h-96 w-full" />
+      </PageContainer>
     );
   }
 
   if (!user || !isModerator) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-        <ShieldCheck className="text-muted-foreground mx-auto size-10" />
-        <p className="text-muted-foreground mt-3">只有管理员和版主可以访问后台</p>
-        <Button className="mt-4" variant="outline" onClick={() => navigate('/')}>
-          返回首页
-        </Button>
-      </div>
+      <PageContainer width="wide">
+        <PageMessage
+          icon={<ShieldCheck className="size-10" />}
+          title="无权访问管理后台"
+          description="只有管理员和版主可以进入这里。"
+          action={
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+              返回首页
+            </Button>
+          }
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <h1 className="mb-4 flex items-center gap-2 text-xl font-bold">
-        <ShieldCheck className="text-primary size-5" /> 管理后台
-        {!isAdmin && <Badge variant="secondary">版主权限</Badge>}
-      </h1>
+    <PageContainer width="wide">
+      <PageHeader
+        title="管理后台"
+        icon={<ShieldCheck className="text-primary size-5" />}
+        description={isAdmin ? '站点数据、内容与第三方服务配置。' : '你当前是版主，只显示有权限的分区。'}
+        actions={!isAdmin && <Badge variant="secondary">版主权限</Badge>}
+      />
 
       <Tabs defaultValue="overview">
         <TabsList className="mb-4 w-full max-w-full flex-nowrap justify-start overflow-x-auto [&>[role=tab]]:flex-none">
@@ -2357,6 +2367,6 @@ export function AdminPage() {
           </TabsContent>
         )}
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

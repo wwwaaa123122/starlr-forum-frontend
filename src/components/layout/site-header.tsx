@@ -4,27 +4,31 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bell,
   Compass,
+  Cookie,
+  Heart,
   Home,
   LogOut,
   Menu,
   Moon,
   PenLine,
+  Rss,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
+  Star,
   Sun,
   User,
-  Heart,
-  Star,
 } from 'lucide-react';
 import { assetUrl } from '@/lib/base-url';
 import { useTheme } from 'next-themes';
-import { Cookie } from 'lucide-react';
 import { openCookieSettings } from '@/lib/consent';
+import { feedUrl, useSiteConfig } from '@/lib/site-config';
+import { API_BASE } from '@/lib/base-url';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +45,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 
 const THEME_ORDER = ['light', 'dark', 'system'] as const;
 const THEME_LABEL: Record<string, string> = { light: '浅色', dark: '深色', system: '跟随系统' };
+
+/** 顶栏导航统一态：默认 muted，hover 浅底，当前路由高亮（原先没有激活态） */
+function navLinkClass({ isActive }: { isActive: boolean }) {
+  return cn(
+    'flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium transition-colors',
+    'hover:bg-accent hover:text-foreground',
+    isActive ? 'bg-accent text-foreground' : 'text-muted-foreground',
+  );
+}
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -76,7 +89,7 @@ function NotificationBell() {
   const unread = data?.unread ?? 0;
   if (!user) return null;
   return (
-    <Button asChild variant="ghost" size="icon" aria-label="通知" className="relative">
+    <Button asChild variant="ghost" size="icon" aria-label={unread > 0 ? `通知（${unread} 条未读）` : '通知'} className="relative">
       <Link to="/notifications">
         <Bell className="size-[1.15rem]" />
         {unread > 0 && (
@@ -90,7 +103,8 @@ function NotificationBell() {
 }
 
 export function SiteHeader() {
-  const { user, logout, isAdmin, isModerator } = useAuth();
+  const { user, logout, isModerator } = useAuth();
+  const { siteName, registrationEnabled } = useSiteConfig();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -120,20 +134,14 @@ export function SiteHeader() {
 
   const navItems = (
     <>
-      <NavLink to="/" className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent">
+      <NavLink to="/" end className={navLinkClass}>
         <Home className="size-4" /> 首页
       </NavLink>
-      <NavLink
-        to="/categories"
-        className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent"
-      >
+      <NavLink to="/categories" className={navLinkClass}>
         <Compass className="size-4" /> 分类
       </NavLink>
       {user && (
-        <NavLink
-          to="/notifications"
-          className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent"
-        >
+        <NavLink to="/notifications" className={navLinkClass}>
           <Bell className="size-4" /> 通知
         </NavLink>
       )}
@@ -153,16 +161,13 @@ export function SiteHeader() {
           <SheetContent side="left" className="w-72">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
-                <Sparkles className="text-primary size-4" /> Starlr Forum
+                <Sparkles className="text-primary size-4" /> {siteName}
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-1 px-4" onClick={() => setMobileOpen(false)}>
               {navItems}
               {user && (
-                <NavLink
-                  to={`/users/${user.username}`}
-                  className="flex items-center gap-2 rounded-none px-3 py-2 text-sm font-medium hover:bg-accent"
-                >
+                <NavLink to={`/users/${user.username}`} className={navLinkClass}>
                   <User className="size-4" /> 我的主页
                 </NavLink>
               )}
@@ -172,7 +177,7 @@ export function SiteHeader() {
 
         <Link to="/" className="flex shrink-0 items-center gap-2 font-bold">
           <Sparkles className="text-primary size-5" />
-          <span className="hidden sm:inline">Starlr Forum</span>
+          <span className="hidden max-w-40 truncate sm:inline">{siteName}</span>
           <span className="sm:hidden">Starlr</span>
         </Link>
 
@@ -216,7 +221,10 @@ export function SiteHeader() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="rounded-none outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer" aria-label="用户菜单">
+                <button
+                  className="rounded-none outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                  aria-label="用户菜单"
+                >
                   <Avatar className="size-8 border">
                     <AvatarImage src={assetUrl(user.avatarUrl)} alt={user.nickname} />
                     <AvatarFallback>{user.nickname.slice(0, 1).toUpperCase()}</AvatarFallback>
@@ -244,7 +252,6 @@ export function SiteHeader() {
                 {isModerator && (
                   <DropdownMenuItem onClick={() => navigate('/admin')}>
                     <ShieldCheck className="size-4" /> 管理后台
-                    {isAdmin ? '' : ''}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -259,9 +266,11 @@ export function SiteHeader() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/login">登录</Link>
             </Button>
-            <Button asChild size="sm">
-              <Link to="/register">注册</Link>
-            </Button>
+            {registrationEnabled && (
+              <Button asChild size="sm">
+                <Link to="/register">注册</Link>
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -294,22 +303,39 @@ export function SiteHeader() {
   );
 }
 
+const footerLinkClass = 'inline-flex items-center gap-1 hover:text-foreground hover:underline underline-offset-4';
+
 export function SiteFooter() {
+  const { siteName, siteFooter } = useSiteConfig();
   return (
-    <footer className="safe-bottom border-t">
-      <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center gap-1.5 px-4 py-6 text-xs sm:flex-row sm:justify-between">
-        <span>© {new Date().getFullYear()} Starlr Forum</span>
-        <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <a href="/terms" className="hover:text-foreground hover:underline">用户协议</a>
-          <a href="/privacy" className="hover:text-foreground hover:underline">隐私政策</a>
-          <button type="button" onClick={() => openCookieSettings()} className="inline-flex items-center gap-1 hover:text-foreground hover:underline">
+    <footer className="safe-bottom bg-background/60 border-t">
+      <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-6 text-xs sm:flex-row sm:justify-between">
+        <span className="text-center sm:text-left">
+          © {new Date().getFullYear()} {siteName}
+          {siteFooter ? ` · ${siteFooter}` : ''}
+        </span>
+        <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <Link to="/terms" className={footerLinkClass}>
+            用户协议
+          </Link>
+          <Link to="/privacy" className={footerLinkClass}>
+            隐私政策
+          </Link>
+          {/* 后端一直在出 /feed.xml 与 /sitemap.xml，页面此前没有任何入口 */}
+          <a href={feedUrl()} target="_blank" rel="noreferrer" className={footerLinkClass}>
+            <Rss className="size-3" /> RSS
+          </a>
+          <a href={`${API_BASE}/sitemap.xml`} target="_blank" rel="noreferrer" className={footerLinkClass}>
+            站点地图
+          </a>
+          <button type="button" onClick={() => openCookieSettings()} className={footerLinkClass}>
             <Cookie className="size-3" /> Cookie 设置
           </button>
           <span className="inline-flex items-center gap-1.5">
             <Sparkles className="text-primary size-3.5" />
             运行在 Cloudflare 边缘网络上
           </span>
-        </span>
+        </nav>
       </div>
     </footer>
   );

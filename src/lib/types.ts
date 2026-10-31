@@ -66,6 +66,8 @@ export interface Reply {
   createdAt: string;
   updatedAt: string;
   editedAt?: string | null;
+  /** 软删除标记：管理员/辖区版主可见，用于复核 */
+  isDeleted?: boolean;
   liked?: number | boolean;
   authorId: string;
   authorName: string;

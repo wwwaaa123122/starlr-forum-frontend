@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Eye, Heart, LogIn, Star } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
 import { formatNumber } from '@/lib/utils';
 import { PostCard } from '@/components/post-card';
 import { PaginationControls } from '@/components/pagination-controls';
+import { PageContainer, PageHeader, PageMessage, PageSection } from '@/components/layout/page';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Pagination, PostSummary } from '@/lib/types';
 
 type ListKind = 'likes' | 'favorites';
@@ -34,12 +36,14 @@ const TABS: { kind: ListKind; label: string; icon: typeof Heart; endpoint: strin
 ];
 
 function MyListPage({ kind }: { kind: ListKind }) {
-  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const tab = TABS.find((t) => t.kind === kind) ?? TABS[0];
+  usePageTitle(tab.label);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: [tab.kind, page],
     queryFn: () => api<{ posts: PostSummary[]; pagination: Pagination }>(`${tab.endpoint}?page=${page}&pageSize=20`),
     enabled: Boolean(user),
@@ -48,74 +52,103 @@ function MyListPage({ kind }: { kind: ListKind }) {
 
   if (authLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-3 px-4 py-8">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
-      </div>
+      <PageContainer width="narrow">
+        <PageSection>
+          <ListSkeleton rows={4} />
+        </PageSection>
+      </PageContainer>
     );
   }
 
   if (!user) {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-20 text-center">
-        <LogIn className="text-muted-foreground size-10" />
-        <p className="text-sm">登录后查看你的{tab.label.replace('我的', '')}列表</p>
-        <Button onClick={() => navigate('/login')}>
-          <LogIn className="size-4" /> 去登录
-        </Button>
-      </div>
+      <PageContainer width="narrow">
+        <PageMessage
+          icon={<LogIn className="size-9" />}
+          title={`登录后查看你的${tab.label.replace('我的', '')}列表`}
+          description="点赞与收藏只对自己可见，登录即可同步到所有设备。"
+          action={
+            <Button asChild>
+              <Link to="/login" state={{ from: location.pathname }}>
+                去登录
+              </Link>
+            </Button>
+          }
+        />
+      </PageContainer>
     );
   }
 
   const posts = data?.posts ?? [];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <h1 className="mb-4 text-lg font-bold">{tab.label}</h1>
+    <PageContainer width="narrow">
+      <PageHeader
+        title={tab.label}
+        description="仅自己可见"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/">去逛逛</Link>
+          </Button>
+        }
+      />
 
-      {/* 点赞 / 收藏 切换 */}
-      <div className="bg-card mb-4 flex gap-1 rounded-none border p-1">
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          return (
-            <Link
-              key={t.kind}
-              to={t.kind === 'likes' ? '/me/likes' : '/me/favorites'}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-none px-3 py-2 text-sm transition-colors',
-                t.kind === kind ? 'bg-accent font-medium' : 'text-muted-foreground hover:bg-accent/50',
-              )}
-            >
-              <Icon className={cn('size-4', t.kind === 'likes' && t.kind === kind && 'fill-current text-rose-500')} />
-              {t.label}
-            </Link>
-          );
-        })}
-      </div>
+      {/* 与搜索页、用户主页一致的 Tabs 组件（原先这里是手写的分段控件） */}
+      <Tabs
+        value={kind}
+        onValueChange={(v) => {
+          if (v === kind) return;
+          navigate(v === 'likes' ? '/me/likes' : '/me/favorites');
+        }}
+        className="mb-4"
+      >
+        <TabsList className="w-full">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <TabsTrigger key={t.kind} value={t.kind} className="flex-1">
+                <Icon className={t.kind === 'likes' ? 'text-rose-500' : undefined} />
+                {t.label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
       {isLoading ? (
-        <div className="bg-card rounded-none border">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="m-3 h-20" />
-          ))}
-        </div>
+        <PageSection>
+          <ListSkeleton rows={3} />
+        </PageSection>
+      ) : isError ? (
+        <PageMessage
+          title="列表加载失败"
+          description="网络或服务暂时不可用，可以稍后重试。"
+          action={
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              重新加载
+            </Button>
+          }
+        />
       ) : posts.length === 0 ? (
-        <div className="bg-card flex flex-col items-center gap-2 rounded-none border px-4 py-16 text-center">
-          <Eye className="text-muted-foreground size-8" />
-          <p className="text-sm font-medium">{tab.empty}</p>
-          <p className="text-muted-foreground text-xs">{tab.hint}</p>
-          <Button asChild variant="outline" size="sm" className="mt-2">
-            <Link to="/">去逛逛 →</Link>
-          </Button>
-        </div>
+        <PageSection>
+          <PageMessage
+            icon={<Eye className="size-8" />}
+            title={tab.empty}
+            description={tab.hint}
+            action={
+              <Button asChild variant="outline" size="sm">
+                <Link to="/">去逛逛 →</Link>
+              </Button>
+            }
+          />
+        </PageSection>
       ) : (
         <>
-          <div className="bg-card rounded-none border">
+          <PageSection>
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
-          </div>
+          </PageSection>
           <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
         </>
       )}
@@ -123,7 +156,7 @@ function MyListPage({ kind }: { kind: ListKind }) {
       <p className="text-muted-foreground mt-4 text-center text-xs">
         共 {formatNumber(data?.pagination.total ?? 0)} 篇 · 仅自己可见
       </p>
-    </div>
+    </PageContainer>
   );
 }
 

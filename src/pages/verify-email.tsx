@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
+import { PageContainer } from '@/components/layout/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -14,6 +16,7 @@ export function VerifyEmailPage() {
   const { user, refreshUser } = useAuth();
   const [state, setState] = useState<'loading' | 'ok' | 'error'>(token ? 'loading' : 'error');
   const [message, setMessage] = useState(token ? '正在验证你的邮箱…' : '链接无效：缺少验证令牌');
+  usePageTitle('邮箱验证');
 
   useEffect(() => {
     if (!token) return;
@@ -38,14 +41,14 @@ export function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-16">
+    <PageContainer width="md" className="flex flex-col justify-center py-16">
       <Card>
         <CardHeader className="text-center">
           <div className="mb-2 flex justify-center">
             {state === 'ok' ? (
-              <CheckCircle2 className="size-12 text-emerald-500" />
+              <CheckCircle2 className="text-success size-12" />
             ) : state === 'loading' ? (
-              <div className="border-primary size-10 animate-spin rounded-none border-2 border-t-transparent" />
+              <div className="border-primary size-10 animate-spin border-2 border-t-transparent" />
             ) : (
               <XCircle className="text-destructive size-12" />
             )}
@@ -75,7 +78,7 @@ export function VerifyEmailPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -112,18 +115,13 @@ export function UnverifiedBanner() {
   };
 
   return (
-    <div className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+    <div className="border-warning/40 bg-warning/10 text-warning border-b">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
         <span>
           <strong>邮箱未验证</strong>：你可以浏览内容，但发帖、回复与上传需要先激活账号。
         </span>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={sending || cooldown > 0}
-          onClick={() => void resend()}
-        >
-          {sending ? '发送中…' : cooldown > 0 ? `重新发送（${cooldown}s）` : '重新发送验证邮件'}
+        <Button size="sm" variant="outline" loading={sending} disabled={cooldown > 0} onClick={() => void resend()}>
+          {cooldown > 0 ? `重新发送（${cooldown}s）` : '重新发送验证邮件'}
         </Button>
       </div>
     </div>

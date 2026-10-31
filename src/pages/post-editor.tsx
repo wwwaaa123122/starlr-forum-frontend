@@ -5,15 +5,16 @@ import { toast } from 'sonner';
 import { Send } from 'lucide-react';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
 import { MarkdownView } from '@/components/markdown';
 import { MentionTextarea } from '@/components/mention-textarea';
 import { ImageUploadButton } from '@/components/image-upload-button';
+import { PageContainer, PageHeader, PageSection } from '@/components/layout/page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import type { Category, PostDetail } from '@/lib/types';
 
@@ -22,6 +23,7 @@ export function PostEditorPage() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  usePageTitle(isEdit ? '编辑帖子' : '发布新帖');
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -142,10 +144,14 @@ export function PostEditorPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
-      <h1 className="mb-4 text-xl font-bold">{isEdit ? '编辑帖子' : '发布新帖'}</h1>
+    <PageContainer>
+      <PageHeader
+        title={isEdit ? '编辑帖子' : '发布新帖'}
+        description="支持 Markdown；正文里输入 @ 可以提及他人。"
+        back
+      />
 
-      <div className="space-y-4">
+      <PageSection contentClassName="space-y-5 p-5">
         <div className="space-y-1.5">
           <Label htmlFor="title">标题</Label>
           <Input
@@ -170,9 +176,10 @@ export function PostEditorPage() {
                 {(categoriesData?.categories ?? []).map((c) => {
                   const staffOnly = c.postPolicy === 'staff' && !['moderator', 'admin'].includes(user?.role ?? '');
                   return (
-                  <SelectItem key={c.id} value={c.id} disabled={staffOnly}>
-                    {c.icon} {c.name}
-                  </SelectItem>
+                    <SelectItem key={c.id} value={c.id} disabled={staffOnly}>
+                      {c.icon} {c.name}
+                      {staffOnly ? '（仅版主）' : ''}
+                    </SelectItem>
                   );
                 })}
               </SelectContent>
@@ -193,13 +200,16 @@ export function PostEditorPage() {
               }}
               placeholder="输入标签后回车添加"
             />
-            <p className="text-muted-foreground text-xs">
-              回车或逗号添加，可一次粘贴多个（用逗号分隔）；点击已添加的标签可删除
-            </p>
+            <p className="text-muted-foreground text-xs">回车或逗号添加；点击已添加的标签可删除</p>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1 cursor-pointer" onClick={() => setTags(tags.filter((t) => t !== tag))}>
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="cursor-pointer"
+                    onClick={() => setTags(tags.filter((t) => t !== tag))}
+                  >
                     #{tag} ×
                   </Badge>
                 ))}
@@ -259,7 +269,7 @@ export function PostEditorPage() {
               />
             </TabsContent>
             <TabsContent value="preview">
-              <div className="bg-card min-h-80 rounded-none border p-4">
+              <div className="surface min-h-80 p-4">
                 {content.trim() ? (
                   <MarkdownView content={content} />
                 ) : (
@@ -270,16 +280,16 @@ export function PostEditorPage() {
           </Tabs>
           <p className="text-muted-foreground text-right text-xs">{content.length} / 50000</p>
         </div>
+      </PageSection>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            取消
-          </Button>
-          <Button onClick={() => void submit()} disabled={submitting}>
-            <Send className="size-4" /> {isEdit ? '保存修改' : '发布'}
-          </Button>
-        </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline" onClick={() => navigate(-1)} disabled={submitting}>
+          取消
+        </Button>
+        <Button loading={submitting} onClick={() => void submit()}>
+          <Send className="size-4" /> {isEdit ? '保存修改' : '发布'}
+        </Button>
       </div>
-    </div>
+    </PageContainer>
   );
 }

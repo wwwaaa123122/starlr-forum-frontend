@@ -30,6 +30,11 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  /* 语义状态色：全站「成功 / 警告」统一走这两个令牌（不再散落 emerald/amber 硬编码） */
+  --success: oklch(0.508 0.118 165.612);
+  --success-foreground: oklch(0.98 0.01 165);
+  --warning: oklch(0.555 0.163 48.998);
+  --warning-foreground: oklch(0.28 0.07 46);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.216 0.006 56.043);
   --sidebar-primary: oklch(0.51 0.13 265.5);
@@ -65,6 +70,10 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  --success: oklch(0.765 0.177 163.223);
+  --success-foreground: oklch(0.2 0.03 165);
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.28 0.07 46);
   --sidebar: oklch(0.186 0.005 285.9);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.68 0.14 266);
@@ -104,6 +113,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -128,6 +141,45 @@
   }
   ::selection {
     @apply bg-primary/20;
+  }
+  /* 统一键盘焦点反馈：所有可聚焦元素保持同一种 ring，避免各页面自造轮廓 */
+  :focus-visible {
+    @apply outline-none ring-ring/50 ring-[3px];
+  }
+  /* 尊重系统「减少动效」偏好 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+ * 卡片容器统一入口。
+ * 历史上各页面各写一遍 `bg-card rounded-none border`，改配色要全站搜；
+ * 现在统一收敛为 .surface / .surface-interactive，页面只声明内边距与布局。
+ */
+@layer components {
+  .surface {
+    @apply border bg-card;
+  }
+  .surface-interactive {
+    @apply border bg-card transition-colors;
+  }
+  .surface-interactive:hover {
+    @apply border-primary/40;
+  }
+  /* 列表行：hover 反馈与分隔线样式保持一致（帖子 / 通知 / 搜索结果共用） */
+  .row-interactive {
+    @apply transition-colors;
+  }
+  .row-interactive:hover {
+    @apply bg-accent/40;
   }
 }
 

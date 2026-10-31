@@ -19,8 +19,11 @@ import {
 import { assetUrl } from '@/lib/base-url';
 import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { usePageTitle } from '@/lib/use-page-title';
 import { MarkdownView } from '@/components/markdown';
 import { MentionTextarea } from '@/components/mention-textarea';
+import { PageContainer, PageMessage, PageSection } from '@/components/layout/page';
+import { PaginationControls } from '@/components/pagination-controls';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -230,6 +233,11 @@ function ReplyItem({
                 回复 <span className="text-primary">@{reply.replyToUserName}</span>
               </span>
             )}
+            {reply.isDeleted && (
+              <Badge variant="destructive" className="px-1 py-0 text-[10px]">
+                已删除
+              </Badge>
+            )}
           </div>
 
           {editing ? (
@@ -245,7 +253,10 @@ function ReplyItem({
               </div>
             </div>
           ) : (
-            <MarkdownView content={reply.content} className="mt-1.5 text-sm" />
+            <MarkdownView
+              content={reply.content}
+              className={`mt-1.5 text-sm ${reply.isDeleted ? 'opacity-60' : ''}`}
+            />
           )}
 
           <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-1 text-xs">
@@ -309,6 +320,7 @@ export function PostDetailPage() {
   const { user, isModerator } = useAuth();
   const queryClient = useQueryClient();
   const [replyContent, setReplyContent] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
   const [replyTo, setReplyTo] = useState<Reply | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [replyPage, setReplyPage] = useState(1);
@@ -328,6 +340,7 @@ export function PostDetailPage() {
   });
 
   const post = data?.post;
+  usePageTitle(post?.title ?? '帖子');
 
   // 浏览量（去重由服务端 KV 处理）
   useEffect(() => {
@@ -362,6 +375,7 @@ export function PostDetailPage() {
 
   const submitReply = async () => {
     if (!replyContent.trim()) return;
+    setSubmittingReply(true);
     try {
       await api(`/api/posts/${id}/replies`, {
         method: 'POST',
@@ -374,6 +388,8 @@ export function PostDetailPage() {
       invalidatePost();
     } catch (e) {
       toast.error(e instanceof ApiClientError ? e.message : '回复失败');
+    } finally {
+      setSubmittingReply(false);
     }
   };
 
@@ -415,35 +431,40 @@ export function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl space-y-4 px-4 py-6">
+      <PageContainer>
         <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+        <Skeleton className="mt-3 h-4 w-40" />
+        <Skeleton className="mt-4 h-64 w-full" />
+      </PageContainer>
     );
   }
 
   if (error || !post) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <p className="text-muted-foreground">帖子不存在或已被删除</p>
-        <Button className="mt-4" variant="outline" onClick={() => navigate('/')}>
-          返回首页
-        </Button>
-      </div>
+      <PageContainer>
+        <PageMessage
+          title="帖子不存在或已被删除"
+          description="链接可能已失效，或作者删除了这篇帖子。"
+          action={
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+              返回首页
+            </Button>
+          }
+        />
+      </PageContainer>
     );
   }
 
   const tags = (post.tags ?? []).map((t) => (typeof t === 'string' ? t : t.name));
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <PageContainer>
       <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={() => navigate(-1)}>
         <ArrowLeft className="size-4" /> 返回
       </Button>
 
       {/* 帖子主体 */}
-      <article className="bg-card rounded-none border">
+      <article className="surface">
         <div className="p-5">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {Boolean(post.isPinned) && (
@@ -484,7 +505,7 @@ export function PostDetailPage() {
           {tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
-                <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}`}>
+                <Link key={tag} to={`/?tag=${encodeURIComponent(tag)}`}>
                   <Badge variant="outline" className="font-normal">
                     #{tag}
                   </Badge>
@@ -598,7 +619,7 @@ export function PostDetailPage() {
 
         {/* 回复输入 */}
         {user ? (
-          <div className="bg-card mb-4 rounded-none border p-4">
+          <div className="surface mb-4 p-4">
             {replyTo && (
               <div className="text-muted-foreground mb-2 flex items-center justify-between text-xs">
                 <span>
@@ -653,13 +674,13 @@ export function PostDetailPage() {
             </Tabs>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-muted-foreground text-xs">{replyContent.length} / 20000</span>
-              <Button size="sm" onClick={() => void submitReply()} disabled={!replyContent.trim()}>
+              <Button size="sm" loading={submittingReply} onClick={() => void submitReply()} disabled={!replyContent.trim()}>
                 <Send className="size-4" /> 发表回复
               </Button>
             </div>
           </div>
         ) : (
-          <div className="bg-card text-muted-foreground mb-4 rounded-none border p-4 text-center text-sm">
+          <div className="surface text-muted-foreground mb-4 p-4 text-center text-sm">
             <Link to="/login" className="text-primary hover:underline">
               登录
             </Link>{' '}
@@ -667,16 +688,16 @@ export function PostDetailPage() {
           </div>
         )}
 
-        <div className="bg-card rounded-none border">
+        <PageSection>
           {replies.length === 0 ? (
-            <p className="text-muted-foreground px-4 py-10 text-center text-sm">还没有回复，来抢沙发～</p>
+            <PageMessage title="还没有回复" description="来抢个沙发，说点有用的。" />
           ) : (
             replies.map((reply) => (
               <ReplyItem
                 key={reply.id}
                 reply={reply}
                 postId={id}
-        replyPage={replyPage}
+                replyPage={replyPage}
                 onReply={(r) => {
                   setReplyTo(r);
                   document.querySelector('textarea')?.focus();
@@ -684,29 +705,12 @@ export function PostDetailPage() {
               />
             ))
           )}
-        </div>
+        </PageSection>
 
-        {repliesData && repliesData.pagination.totalPages > 1 && (
-          <div className="mt-4 flex justify-center gap-2">
-            <Button variant="outline" size="sm" disabled={replyPage <= 1} onClick={() => setReplyPage((p) => p - 1)}>
-              上一页
-            </Button>
-            <span className="text-muted-foreground self-center text-sm">
-              {replyPage} / {repliesData.pagination.totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={replyPage >= repliesData.pagination.totalPages}
-              onClick={() => setReplyPage((p) => p + 1)}
-            >
-              下一页
-            </Button>
-          </div>
-        )}
+        <PaginationControls pagination={repliesData?.pagination} onPageChange={setReplyPage} />
       </section>
 
       <ReportDialog open={reportOpen} onOpenChange={setReportOpen} targetType="post" targetId={id} />
-    </div>
+    </PageContainer>
   );
 }

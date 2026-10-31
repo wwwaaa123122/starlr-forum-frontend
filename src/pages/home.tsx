@@ -1,12 +1,14 @@
-import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { PenLine } from 'lucide-react';
+import { PenLine, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useSiteConfig } from '@/lib/site-config';
+import { usePageTitle } from '@/lib/use-page-title';
 import { PostCard, PostCardSkeleton } from '@/components/post-card';
 import { CategoryIcon } from '@/components/category-icon';
 import { PaginationControls } from '@/components/pagination-controls';
+import { PageContainer, PageHeader, PageSection, PageMessage } from '@/components/layout/page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +21,7 @@ export function HomePage() {
   const sort = (searchParams.get('sort') ?? 'new') as 'new' | 'hot';
   const tag = searchParams.get('tag') ?? '';
   const { user } = useAuth();
+  const { siteDescription, siteTagline } = useSiteConfig();
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
@@ -26,7 +29,7 @@ export function HomePage() {
     staleTime: 60_000,
   });
 
-  const { data: postsData, isLoading } = useQuery({
+  const { data: postsData, isLoading, isError, refetch } = useQuery({
     queryKey: ['posts', { category: slug ?? '', sort, page, tag }],
     queryFn: () =>
       api<{ posts: PostSummary[]; pagination: Pagination }>(
@@ -48,28 +51,43 @@ export function HomePage() {
   };
 
   const categories = categoriesData?.categories ?? [];
+  const currentCategory = categories.find((c) => c.slug === slug);
+  const totalPosts = categories.reduce((acc, c) => acc + c.postCount, 0);
+
+  usePageTitle(currentCategory?.name ?? (tag ? `#${tag}` : null));
 
   return (
-    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_240px]">
+    <PageContainer width="wide" className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_240px]">
       <div className="min-w-0">
-        {/* 排序 */}
-        <div className="mb-4 flex items-center justify-between gap-2">
+        {/* 分类页给出可见标题，列表首页保留站点标语作为无障碍/SEO 的 h1 */}
+        <PageHeader
+          title={currentCategory ? `${currentCategory.icon ? `${currentCategory.icon} ` : ''}${currentCategory.name}` : '全部帖子'}
+          description={currentCategory?.description || siteTagline || undefined}
+          className="mb-3"
+          actions={
+            user && (
+              <Button asChild size="sm">
+                <Link to="/new">
+                  <PenLine className="size-4" /> 发帖
+                </Link>
+              </Button>
+            )
+          }
+        />
+
+        {/* 排序 + 当前标签 */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <Tabs value={sort} onValueChange={(v) => setParams({ sort: v, page: 1 })}>
             <TabsList>
-              <TabsTrigger value="new">最新文章</TabsTrigger>
+              <TabsTrigger value="new">最新</TabsTrigger>
               <TabsTrigger value="hot">热门</TabsTrigger>
             </TabsList>
           </Tabs>
           {tag && (
-            <Button variant="outline" size="sm" onClick={() => setParams({ tag: '', page: 1 })}>
-              标签：{tag} ✕
-            </Button>
-          )}
-          {user && (
-            <Button asChild size="sm">
-              <Link to="/new">
-                <PenLine className="size-4" /> 发帖
-              </Link>
+            <Button variant="secondary" size="sm" className="gap-1" onClick={() => setParams({ tag: '', page: 1 })}>
+              #{tag}
+              <X className="size-3.5" />
+              <span className="sr-only">清除标签筛选</span>
             </Button>
           )}
         </div>
@@ -90,69 +108,76 @@ export function HomePage() {
           ))}
         </div>
 
-        <div className="bg-card rounded-none border">
+        <PageSection>
           {isLoading ? (
             <>
-              <PostCardSkeleton />
-              <PostCardSkeleton />
-              <PostCardSkeleton />
-              <PostCardSkeleton />
-              <PostCardSkeleton />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <PostCardSkeleton key={i} />
+              ))}
             </>
-          ) : (postsData?.posts.length ?? 0) === 0 ? (
-            <div className="text-muted-foreground flex flex-col items-center gap-3 px-4 py-16 text-center">
-              <p>还没有帖子，来发布第一篇吧！</p>
-              {user && (
-                <Button asChild size="sm">
-                  <Link to="/new">发布帖子</Link>
+          ) : isError ? (
+            <PageMessage
+              title="帖子加载失败"
+              description="网络或服务暂时不可用，可以稍后重试。"
+              action={
+                <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                  重新加载
                 </Button>
-              )}
-            </div>
+              }
+            />
+          ) : (postsData?.posts.length ?? 0) === 0 ? (
+            <PageMessage
+              title={tag ? `没有带 #${tag} 标签的帖子` : '这里还没有帖子'}
+              description={tag ? '换一个标签，或看看最新的讨论。' : '来发布第一篇，让这里热闹起来。'}
+              action={
+                user ? (
+                  <Button asChild size="sm">
+                    <Link to="/new">发布帖子</Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/login">登录后发帖</Link>
+                  </Button>
+                )
+              }
+            />
           ) : (
             postsData!.posts.map((post) => <PostCard key={post.id} post={post} />)
           )}
-        </div>
+        </PageSection>
 
         <PaginationControls pagination={postsData?.pagination} onPageChange={(p) => setParams({ page: p })} />
       </div>
 
       {/* 桌面侧栏 */}
       <aside className="hidden min-w-0 space-y-4 md:block">
-        <div className="bg-card rounded-none border p-4">
-          <h2 className="mb-3 text-sm font-semibold">分类</h2>
-          <nav className="space-y-1">
+        <PageSection title="分类" contentClassName="space-y-0.5 p-2">
+          <Link
+            to="/"
+            className={`flex items-center justify-between rounded-none px-2 py-1.5 text-sm transition-colors hover:bg-accent ${!slug ? 'bg-accent font-medium' : ''}`}
+          >
+            <span>全部</span>
+            <span className="text-muted-foreground text-xs">{totalPosts}</span>
+          </Link>
+          {categories.map((c) => (
             <Link
-              to="/"
-              className={`flex items-center justify-between rounded-none px-2 py-1.5 text-sm hover:bg-accent ${!slug ? 'bg-accent font-medium' : ''}`}
+              key={c.id}
+              to={`/categories/${c.slug}`}
+              className={`flex items-center justify-between rounded-none px-2 py-1.5 text-sm transition-colors hover:bg-accent ${slug === c.slug ? 'bg-accent font-medium' : ''}`}
             >
-              <span>全部</span>
-              <span className="text-muted-foreground text-xs">
-                {categories.reduce((acc, c) => acc + c.postCount, 0)}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <CategoryIcon icon={c.icon} className="size-4 shrink-0" />
+                <span className="truncate">{c.name}</span>
               </span>
+              <span className="text-muted-foreground text-xs">{c.postCount}</span>
             </Link>
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                to={`/categories/${c.slug}`}
-                className={`flex items-center justify-between rounded-none px-2 py-1.5 text-sm hover:bg-accent ${slug === c.slug ? 'bg-accent font-medium' : ''}`}
-              >
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <CategoryIcon icon={c.icon} className="size-4 shrink-0" />
-                  <span className="truncate">{c.name}</span>
-                </span>
-                <span className="text-muted-foreground text-xs">{c.postCount}</span>
-              </Link>
-            ))}
-          </nav>
-        </div>
+          ))}
+        </PageSection>
 
-        <div className="bg-card rounded-none border p-4 text-sm">
-          <h2 className="mb-2 text-sm font-semibold">关于</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Starlr Forum —— 运行在 Cloudflare Workers + D1 上的现代化中文社区，支持 Markdown、标签、通知与 @ 提及。
-          </p>
-        </div>
+        <PageSection title="关于" contentClassName="p-4 pt-3">
+          <p className="text-muted-foreground text-sm leading-relaxed">{siteDescription}</p>
+        </PageSection>
       </aside>
-    </div>
+    </PageContainer>
   );
 }

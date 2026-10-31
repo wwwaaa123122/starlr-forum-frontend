@@ -1,24 +1,23 @@
-import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { FileText, ShieldCheck } from 'lucide-react';
+import { PageContainer, PageHeader } from '@/components/layout/page';
+import { usePageTitle } from '@/lib/use-page-title';
 
 /** 法律文档页面（/privacy /terms）。内容为本站实际数据处理方式的说明。 */
-function LegalShell({ icon, title, updated, children }: { icon: React.ReactNode; title: string; updated: string; children: React.ReactNode }) {
-  useEffect(() => {
-    document.title = `${title} - Starlr Forum`;
-  }, [title]);
+function LegalShell({ icon, title, updated, children }: { icon: ReactNode; title: string; updated: string; children: ReactNode }) {
+  usePageTitle(title);
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="bg-primary/10 text-primary rounded-none p-2.5">{icon}</div>
-        <div>
-          <h1 className="text-xl font-semibold">{title}</h1>
-          <p className="text-muted-foreground text-xs">生效日期：{updated}</p>
-        </div>
-      </div>
-      <div className="bg-card space-y-6 rounded-none border p-5 sm:p-7 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-1.5 [&_p]:text-muted-foreground [&_p]:text-sm [&_p]:leading-relaxed [&_li]:text-muted-foreground [&_li]:text-sm [&_li]:leading-relaxed [&_a]:text-primary [&_a]:hover:underline [&_code]:bg-muted [&_code]:rounded-none [&_code]:px-1 [&_code]:text-xs">
+    <PageContainer width="narrow">
+      <PageHeader
+        title={title}
+        icon={icon}
+        description={`生效日期：${updated}`}
+        className="mb-6"
+      />
+      <div className="surface space-y-6 p-5 sm:p-7 [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-semibold [&_p]:text-muted-foreground [&_p]:text-sm [&_p]:leading-relaxed [&_li]:text-muted-foreground [&_li]:text-sm [&_li]:leading-relaxed [&_a]:text-primary [&_a]:hover:underline [&_code]:bg-muted [&_code]:px-1 [&_code]:text-xs">
         {children}
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

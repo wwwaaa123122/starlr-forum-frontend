@@ -5,6 +5,11 @@ import { Sparkles } from 'lucide-react';
 import { ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Turnstile, fetchSiteConfig } from '@/components/turnstile';
+import { Github } from 'lucide-react';
+
+/** GitHub 授权入口：跟随当前访问域名回跳（后端 state 校验白名单） */
+const githubOAuthStartUrl = () =>
+  `${import.meta.env.VITE_API_BASE ?? ''}/oauth/start/github?redirect=${encodeURIComponent(window.location.origin)}`;
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -87,6 +92,18 @@ export function LoginPage() {
               </Link>
             </p>
           </form>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="bg-border h-px flex-1" />
+            <span className="text-muted-foreground text-[12px]">或</span>
+            <div className="bg-border h-px flex-1" />
+          </div>
+          <a
+            href={githubOAuthStartUrl()}
+            className="border-border mt-3 flex w-full items-center justify-center gap-2 rounded-none border py-2.5 text-[14px] font-medium transition hover:bg-muted"
+          >
+            <Github size={17} />
+            使用 GitHub 登录
+          </a>
           <p className="text-muted-foreground mt-4 text-center text-sm">
             还没有账号？{' '}
             <Link to="/register" className="text-primary hover:underline">

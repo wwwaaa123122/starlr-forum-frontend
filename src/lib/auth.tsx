@@ -42,6 +42,8 @@ interface AuthState {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
+  /** GitHub OAuth：一次性 code 换 token 并登录 */
+  oauthExchange: (code: string) => Promise<void>;
 }
 
 export interface RegisterInput {
@@ -166,6 +168,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applyAuthResponse(data);
   }, []);
 
+  /** GitHub OAuth：一次性 code 换本 Worker 签发 token（POST /api/auth/oauth/exchange） */
+  const oauthExchange = useCallback(async (code: string) => {
+    const data = await api<AuthResponse>('/api/auth/oauth/exchange', {
+      method: 'POST',
+      body: { code },
+      retryOn401: false,
+    });
+    applyAuthResponse(data);
+  }, []);
+
   const logout = useCallback(async () => {
     const refreshToken = getStoredRefreshToken();
     try {
@@ -198,8 +210,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshUser: loadUser,
       getAccessToken,
+      oauthExchange,
     }),
-    [user, loading, login, register, logout, loadUser, getAccessToken],
+    [user, loading, login, register, logout, loadUser, getAccessToken, oauthExchange],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,6 +7,7 @@ import { CategoriesPage } from '@/pages/categories';
 import { PostDetailPage } from '@/pages/post-detail';
 import { PostEditorPage } from '@/pages/post-editor';
 import { LoginPage } from '@/pages/login';
+import OAuthCallback from '@/pages/oauth-callback';
 import { ForgotPasswordPage } from '@/pages/forgot-password';
 import { ResetPasswordPage } from '@/pages/reset-password';
 import { RegisterPage } from '@/pages/register';
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/me/likes" element={<MyLikesPage />} />
           <Route path="/me/favorites" element={<MyFavoritesPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/github/done" element={<OAuthCallback />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

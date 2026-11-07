@@ -107,7 +107,7 @@ function MyListPage({ kind }: { kind: ListKind }) {
             const Icon = t.icon;
             return (
               <TabsTrigger key={t.kind} value={t.kind} className="flex-1">
-                <Icon className={t.kind === 'likes' ? 'text-rose-500' : undefined} />
+                <Icon className={t.kind === 'likes' ? 'text-destructive' : undefined} />
                 {t.label}
               </TabsTrigger>
             );

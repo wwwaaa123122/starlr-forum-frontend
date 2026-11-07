@@ -266,7 +266,7 @@ function ReplyItem({
               className="h-7 shrink-0 gap-1 px-2"
               onClick={() => replyLikeMutation.mutate()}
             >
-              <Heart className={`size-3.5 ${reply.liked ? 'fill-current text-rose-500' : ''}`} />
+              <Heart className={`size-3.5 ${reply.liked ? 'fill-current text-destructive' : ''}`} />
               {formatNumber(reply.likeCount)}
             </Button>
             {user && (

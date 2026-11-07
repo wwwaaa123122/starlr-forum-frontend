@@ -27,7 +27,7 @@ export function CategoriesPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-[76px] w-full" />
+            <Skeleton key={i} className="h-19 w-full" />
           ))}
         </div>
       ) : isError ? (

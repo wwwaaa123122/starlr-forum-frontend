@@ -67,7 +67,7 @@ interface MarkdownViewProps {
 
 export const MarkdownView = memo(function MarkdownView({ content, className }: MarkdownViewProps) {
   return (
-    <div className={cn('md-content text-[15px]', className)}>
+    <div className={cn('md-content text-sm', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[

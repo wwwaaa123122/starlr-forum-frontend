@@ -93,7 +93,7 @@ function StatCards() {
           <h3 className="text-sm font-semibold">浏览量排行</h3>
           <span className="text-muted-foreground text-xs">Top 10</span>
         </div>
-        <Table className="min-w-[520px]">
+        <Table className="min-w-130">
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">#</TableHead>
@@ -261,7 +261,7 @@ function UsersTab() {
         className="max-w-sm"
       />
       <div className="surface">
-        <Table className="min-w-[860px]">
+        <Table className="min-w-215">
           <TableHeader>
             <TableRow>
               <TableHead className="w-16">UID</TableHead>
@@ -326,7 +326,7 @@ function UsersTab() {
                     {u.status === 'banned' ? (
                       <Badge variant="destructive">已封禁</Badge>
                     ) : !u.emailVerified ? (
-                      <Badge variant="outline" className="border-amber-500/60 text-amber-600 dark:text-amber-400">
+                      <Badge variant="warning">
                         未验证
                       </Badge>
                     ) : u.mutedUntil || u.mutedPermanent ? (
@@ -558,7 +558,7 @@ function PostsTab() {
       </Select>
 
       <div className="surface">
-        <Table className="min-w-[640px]">
+        <Table className="min-w-160">
           <TableHeader>
             <TableRow>
               <TableHead>标题</TableHead>
@@ -786,7 +786,7 @@ function CategoriesTab() {
             <RotateCcw className="size-3.5" /> 恢复默认分类
           </Button>
         </div>
-        <Table className="min-w-[520px]">
+        <Table className="min-w-130">
           <TableHeader>
             <TableRow>
               <TableHead>分类</TableHead>
@@ -845,7 +845,7 @@ function CategoriesTab() {
       </div>
       {isAdmin && (
         <div className="surface space-y-3 p-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr]">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称" maxLength={24} />
             <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug（小写字母数字）" />
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="描述" maxLength={200} />
@@ -1169,7 +1169,7 @@ function ModeratorsTab() {
 
       {(mods?.siteWide ?? []).length > 0 && (
         <div className="surface overflow-x-auto">
-          <Table className="min-w-[640px]">
+          <Table className="min-w-160">
             <TableHeader>
               <TableRow>
                 <TableHead className="whitespace-nowrap">全站版主</TableHead>
@@ -1214,7 +1214,7 @@ function ModeratorsTab() {
       )}
 
       <div className="surface overflow-x-auto">
-        <Table className="min-w-[640px]">
+        <Table className="min-w-160">
           <TableHeader>
             <TableRow>
               <TableHead className="whitespace-nowrap">版主</TableHead>
@@ -1373,7 +1373,7 @@ function AdminsTab() {
       </div>
 
       <div className="surface">
-        <Table className="min-w-[860px]">
+        <Table className="min-w-215">
           <TableHeader>
             <TableRow>
               <TableHead className="w-16">UID</TableHead>
@@ -1492,7 +1492,7 @@ function ViewsTab() {
                 className="bg-primary/70 group-hover:bg-primary w-full rounded-none transition-colors"
                 style={{ height: `${Math.max(2, (d.views / maxDaily) * 100)}%` }}
               />
-              <span className="text-muted-foreground text-[9px]">{d.date.slice(5)}</span>
+              <span className="text-muted-foreground text-xs">{d.date.slice(5)}</span>
             </div>
           ))}
         </div>
@@ -1520,7 +1520,7 @@ function ViewsTab() {
       <div>
         <h3 className="mb-2 text-sm font-semibold">最近浏览记录（最近 50 条）</h3>
         <div className="surface overflow-x-auto">
-          <Table className="min-w-[760px]">
+          <Table className="min-w-190">
             <TableHeader>
               <TableRow>
                 <TableHead className="whitespace-nowrap">时间</TableHead>
@@ -1658,7 +1658,7 @@ function AuditTab() {
   return (
     <div className="surface">
       {/* 移动端横向滑动查看，避免列内容被挤成多行 */}
-      <Table className="min-w-[900px]">
+      <Table className="min-w-225">
         <TableHeader>
           <TableRow>
             <TableHead className="whitespace-nowrap">时间</TableHead>
@@ -1781,7 +1781,7 @@ function SeoPushesTab() {
           <button
             key={ch || 'all'}
             onClick={() => { setChannel(ch); setPage(1); }}
-            className={`rounded-none border px-3 py-1.5 text-[13px] transition ${
+            className={`rounded-none border px-3 py-1.5 text-xs transition ${
               channel === ch ? 'border-primary bg-primary/10 font-bold text-primary' : 'border-border text-muted-foreground hover:bg-muted'
             }`}
           >
@@ -1792,7 +1792,7 @@ function SeoPushesTab() {
           <button
             key={st || 'all'}
             onClick={() => { setStatus(st); setPage(1); }}
-            className={`rounded-none border px-3 py-1.5 text-[13px] transition ${
+            className={`rounded-none border px-3 py-1.5 text-xs transition ${
               status === st ? 'border-primary bg-primary/10 font-bold text-primary' : 'border-border text-muted-foreground hover:bg-muted'
             }`}
           >
@@ -1809,7 +1809,7 @@ function SeoPushesTab() {
       </div>
 
       <div className="surface overflow-x-auto">
-        <Table className="min-w-[860px]">
+        <Table className="min-w-215">
           <TableHeader>
             <TableRow>
               <TableHead>帖子</TableHead>
@@ -1845,8 +1845,8 @@ function SeoPushesTab() {
                     <button
                       type="button"
                       onClick={() => (l.message || l.httpCode) && setDetail(l)}
-                      className={`rounded-none px-2 py-0.5 text-[11px] font-bold ${
-                        l.status === 'ok' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'
+                      className={`rounded-none px-2 py-0.5 text-xs font-bold ${
+                        l.status === 'ok' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                       } ${(l.message || l.httpCode) ? 'cursor-pointer underline-offset-2 hover:underline' : 'cursor-default'}`}
                     >
                       {l.status === 'ok' ? '成功' : '失败'}

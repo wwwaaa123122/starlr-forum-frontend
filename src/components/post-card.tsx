@@ -38,14 +38,14 @@ export function PostCard({ post }: { post: PostSummary }) {
           )}
           <Link
             to={`/posts/${post.id}`}
-            className="group-hover:text-primary line-clamp-2 text-[15px] font-semibold leading-snug"
+            className="group-hover:text-primary line-clamp-2 text-sm font-semibold leading-snug"
           >
             {post.title}
           </Link>
         </div>
 
         {excerpt && (
-          <p className="text-muted-foreground mt-1 line-clamp-2 text-[13px] leading-relaxed">{excerpt}</p>
+          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">{excerpt}</p>
         )}
 
         <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

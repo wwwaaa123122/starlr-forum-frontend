@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { SiteFooter, SiteHeader } from '@/components/layout/site-header';
 import { CookieConsent } from '@/components/cookie-consent';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { initConsent } from '@/lib/consent';
 import { ScrollToTop } from '@/lib/use-page-title';
 import { HomePage } from '@/pages/home';
@@ -37,6 +38,7 @@ export default function App() {
       <SiteHeader />
       <UnverifiedBanner />
       <main id="main" className="flex-1">
+        <ErrorBoundary>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
@@ -62,6 +64,7 @@ export default function App() {
           <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </ErrorBoundary>
       </main>
       <SiteFooter />
       <CookieConsent />

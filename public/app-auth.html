@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>应用登录</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #090c1f; color: #e7e9ee; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+    }
+    .card { width: 100%; max-width: 360px; }
+    h1 { font-size: 20px; text-align: center; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #8b93a7; text-align: center; margin-bottom: 20px; }
+    label { display: block; font-size: 13px; color: #8b93a7; margin: 12px 0 6px; }
+    input {
+      width: 100%; padding: 11px 12px; border-radius: 10px; font-size: 15px;
+      border: 1px solid #2a3050; background: #11142a; color: #e7e9ee; outline: none;
+    }
+    input:focus { border-color: #1d9bf0; }
+    button {
+      width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 999px;
+      font-size: 15px; font-weight: 700; background: #1d9bf0; color: #fff; cursor: pointer;
+    }
+    button:disabled { opacity: .55; }
+    #cf-widget { margin-top: 16px; display: flex; justify-content: center; min-height: 0; }
+    #msg { margin-top: 14px; font-size: 13px; line-height: 1.6; text-align: center; color: #8b93a7; white-space: pre-wrap; word-break: break-all; }
+    #msg.err { color: #ff6b6b; }
+    #back { display: none; margin-top: 14px; text-align: center; }
+    #back a { display: inline-block; padding: 10px 22px; border-radius: 999px; background: #1d2a3f; color: #4db2ff; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .switch { margin-top: 14px; text-align: center; font-size: 13px; }
+    .switch a { color: #1d9bf0; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>应用登录</h1>
+    <p class="sub">在浏览器完成登录后自动返回应用</p>
+
+    <div id="form-box">
+      <label id="l-id" for="identifier">用户名或邮箱</label>
+      <input id="identifier" autocomplete="username">
+      <label id="l-email" for="email" style="display:none">邮箱</label>
+      <input id="email" style="display:none" autocomplete="email">
+      <label for="password">密码</label>
+      <input id="password" type="password" autocomplete="current-password">
+      <label id="l-nick" for="nickname" style="display:none">昵称（可选）</label>
+      <input id="nickname" style="display:none" autocomplete="nickname">
+      <div id="cf-widget"></div>
+      <button id="go">登录</button>
+      <div class="switch"><a id="switch" href="?">注册新账号</a></div>
+    </div>
+
+    <div id="back"><a id="back-link" href="#">返回应用</a></div>
+    <p id="msg">正在加载…</p>
+  </div>
+
+  <script>
+    'use strict';
+    var el = function (id) { return document.getElementById(id); };
+    var msgEl = el('msg'), goBtn = el('go');
+    var mode = new URLSearchParams(location.search).get('mode') === 'register' ? 'register' : 'login';
+    var turnstileToken = null;
+
+    function say(text, isErr) {
+      msgEl.textContent = text;
+      msgEl.className = isErr ? 'err' : '';
+    }
+    function fail(text) { say(text, true); goBtn.disabled = false; }
+
+    // 模式切换 UI
+    if (mode === 'register') {
+      document.querySelector('.sub').textContent = '注册完成后自动返回应用';
+      el('l-email').style.display = ''; el('email').style.display = '';
+      el('l-nick').style.display = ''; el('nickname').style.display = '';
+      el('go').textContent = '注册';
+      el('switch').textContent = '已有账号？去登录';
+      el('switch').href = '?';
+      el('password').setAttribute('autocomplete', 'new-password');
+    } else {
+      el('switch').href = '?mode=register';
+    }
+
+    // 应用凭据预交接：App 内已校验过账号密码，这里只需完成一次人机验证（无需重输密码）
+    var preauth = new URLSearchParams(location.search).get('preauth');
+    var preauthName = new URLSearchParams(location.search).get('name') || '';
+    if (preauth) {
+      document.querySelectorAll('#form-box label, #form-box input, .switch').forEach(function (n) { n.style.display = 'none'; });
+      document.querySelector('.sub').textContent =
+        '以账号「' + (preauthName || '已验证用户') + '」继续，完成人机验证后自动返回应用（无需再次输入密码）';
+      goBtn.textContent = mode === 'register' ? '完成人机验证并注册' : '完成人机验证并返回应用';
+    }
+
+    function randomHex(n) {
+      var a = new Uint8Array(n); crypto.getRandomValues(a);
+      return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    }
+
+    function post(path, body, auth) {
+      return fetch(path, {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, auth ? { Authorization: 'Bearer ' + auth } : {}),
+        body: JSON.stringify(body),
+      }).then(function (r) {
+        return r.json().catch(function () { throw new Error('服务器返回异常响应（HTTP ' + r.status + '）'); }).then(function (j) {
+          if (!r.ok || j.error) throw new Error((j.error && j.error.message) || 'HTTP ' + r.status);
+          return j;
+        });
+      });
+    }
+
+    function returnToApp(ticket, challenge) {
+      el('form-box').style.display = 'none';
+      el('back').style.display = 'block';
+      say('验证通过，正在返回应用…');
+      var appUrl = 'starlr://auth?ticket=' + encodeURIComponent(ticket) + '&challenge=' + encodeURIComponent(challenge);
+      el('back-link').href = appUrl;
+      // Chrome 需 intent:// 协议从网页拉起应用；同时保留手动按钮兜底
+      var intentUrl = 'intent://auth?ticket=' + encodeURIComponent(ticket) + '&challenge=' + encodeURIComponent(challenge) +
+        '#Intent;scheme=starlr;package=com.starlr.app;end';
+      setTimeout(function () { window.location.replace(intentUrl); }, 300);
+    }
+
+    function afterLogin(token) {
+      say('登录成功，正在生成返回凭证…');
+      var challenge = randomHex(16);
+      return post('/api/auth/site-login/issue', { origin: location.origin, challenge: challenge }, token)
+        .then(function (j) { returnToApp(j.ticket, challenge); });
+    }
+
+    goBtn.addEventListener('click', function () {
+      goBtn.disabled = true;
+      if (preauth) {
+        say('正在确认…');
+        var challenge = randomHex(16);
+        post('/api/auth/app-login/confirm', {
+          preauth: preauth, challenge: challenge, origin: location.origin, turnstileToken: turnstileToken,
+        })
+          .then(function (j) { returnToApp(j.ticket, challenge); })
+          .catch(function (e) {
+            // 预授权过期/已用：自动切回网页表单模式，用户仍可在网页完成登录
+            if (String(e.message).indexOf('预授权') !== -1) {
+              say('预授权已过期，正在切换到网页表单…');
+              setTimeout(function () { location.href = '/app-auth' + (mode === 'register' ? '?mode=register' : ''); }, 1200);
+            } else {
+              fail('操作失败：' + e.message);
+            }
+          });
+        return;
+      }
+      var identifier = el('identifier').value.trim();
+      var password = el('password').value;
+      if (!identifier) return fail('请输入用户名或邮箱');
+      if (!password) return fail('请输入密码');
+      if (mode === 'login') {
+        say('正在登录…');
+        post('/api/auth/login', { identifier: identifier, password: password, turnstileToken: turnstileToken })
+          .then(function (j) { return afterLogin(j.token); })
+          .catch(function (e) { fail('登录失败：' + e.message); });
+      } else {
+        var email = el('email').value.trim();
+        if (!email) return fail('请输入邮箱');
+        var nickname = el('nickname').value.trim();
+        say('正在注册…');
+        post('/api/auth/register', {
+          username: identifier, email: email, password: password,
+          nickname: nickname || undefined, turnstileToken: turnstileToken,
+        })
+          .then(function (j) { return afterLogin(j.token); })
+          .catch(function (e) { fail('注册失败：' + e.message); });
+      }
+    });
+
+    // 加载配置与人机验证
+    fetch('/api/config', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (cfg) {
+        el('msg').textContent = preauth
+          ? '完成下方人机验证后自动返回应用'
+          : mode === 'register' ? '填写信息完成注册' : '输入账号密码登录';
+        goBtn.disabled = false;
+        if (!cfg.turnstileSiteKey) return; // 站点未启用验证
+        var s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit';
+        s.async = true; s.defer = true;
+        s.onerror = function () { fail('人机验证组件加载失败，请检查网络后重试'); };
+        document.head.appendChild(s);
+
+        window.onTurnstileReady = function () {
+          turnstile.render('#cf-widget', {
+            sitekey: cfg.turnstileSiteKey,
+            size: 'normal',
+            callback: function (t) { turnstileToken = t; },
+            'error-callback': function (code) { fail('人机验证加载失败' + (code ? '（' + code + '）' : '') + '，请重试'); },
+            'expired-callback': function () { turnstileToken = null; say('人机验证已过期，请重新完成验证'); },
+          });
+        };
+      })
+      .catch(function (e) { fail('加载失败：' + (e && e.message ? e.message : e)); });
+  </script>
+</body>
+</html>

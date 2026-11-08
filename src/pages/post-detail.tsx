@@ -429,6 +429,36 @@ export function PostDetailPage() {
 
   const replies = useMemo(() => repliesData?.replies ?? [], [repliesData]);
 
+  /* 楼中楼：parentReplyId 分组（两层展示：顶层 + 子回复缩进）。深层回复提升到所属顶层楼，避免父楼在其它分页时丢失 */
+  const { topLevel, childrenMap } = useMemo(() => {
+    const top: Reply[] = [];
+    const map = new Map<string, Reply[]>();
+    const topIds = new Set(replies.filter((r) => !r.parentReplyId).map((r) => r.id));
+    const rootOf = (r: Reply): string | null => {
+      const seen = new Set<string>();
+      let cur = r;
+      while (cur.parentReplyId && !seen.has(cur.id)) {
+        seen.add(cur.id);
+        if (topIds.has(cur.parentReplyId)) return cur.parentReplyId;
+        const parent = replies.find((x) => x.id === cur.parentReplyId);
+        if (!parent) return cur.parentReplyId; // 父被删除等异常情况：仍挂在原 parent 上
+        cur = parent;
+      }
+      return null;
+    };
+    for (const r of replies) {
+      if (!r.parentReplyId) {
+        top.push(r);
+        continue;
+      }
+      const key = rootOf(r) ?? r.parentReplyId;
+      const list = map.get(key) ?? [];
+      list.push(r);
+      map.set(key, list);
+    }
+    return { topLevel: top, childrenMap: map };
+  }, [replies]);
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -692,17 +722,31 @@ export function PostDetailPage() {
           {replies.length === 0 ? (
             <PageMessage title="还没有回复" description="来抢个沙发，说点有用的。" />
           ) : (
-            replies.map((reply) => (
-              <ReplyItem
-                key={reply.id}
-                reply={reply}
-                postId={id}
-                replyPage={replyPage}
-                onReply={(r) => {
-                  setReplyTo(r);
-                  document.querySelector('textarea')?.focus();
-                }}
-              />
+            topLevel.map((reply) => (
+              <div key={reply.id}>
+                <ReplyItem
+                  reply={reply}
+                  postId={id}
+                  replyPage={replyPage}
+                  onReply={(r) => {
+                    setReplyTo(r);
+                    document.querySelector('textarea')?.focus();
+                  }}
+                />
+                {(childrenMap.get(reply.id) ?? []).map((child) => (
+                  <div key={child.id} className="ml-8 border-l-2 border-border/60 pl-3 sm:ml-12">
+                    <ReplyItem
+                      reply={child}
+                      postId={id}
+                      replyPage={replyPage}
+                      onReply={(r) => {
+                        setReplyTo(reply);
+                        document.querySelector('textarea')?.focus();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             ))
           )}
         </PageSection>

@@ -76,7 +76,7 @@ export function RegisterPage() {
   if (!registrationEnabled) {
     return (
       <AuthShell
-        icon={<UserPlus className="size-6" />}
+        icon={<img src="/icon-192.png" alt="Starlr" className="size-8" />}
         title="注册暂未开放"
         description={`${siteName} 目前仅限邀请或已关闭注册。`}
         footer={

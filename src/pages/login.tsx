@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Github, Sparkles } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useSiteConfig } from '@/lib/site-config';
@@ -55,7 +55,7 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      icon={<Sparkles className="size-6" />}
+      icon={<img src="/icon-192.png" alt="Starlr" className="size-8" />}
       title="登录"
       description={`使用你的 ${siteName} 账号`}
       footer={

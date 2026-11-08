@@ -176,7 +176,7 @@ export function SiteHeader() {
         </Sheet>
 
         <Link to="/" className="flex shrink-0 items-center gap-2 font-bold">
-          <Sparkles className="text-primary size-5" />
+          <img src="/icon-192.png" alt="Starlr" className="size-6" />
           <span className="hidden max-w-40 truncate sm:inline">{siteName}</span>
           <span className="sm:hidden">Starlr</span>
         </Link>

@@ -161,7 +161,7 @@ export function SiteHeader() {
           <SheetContent side="left" className="w-72">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
-                <Sparkles className="text-primary size-4" /> {siteName}
+                <img src="/icon-192.png" alt="Starlr" className="size-6" /> {siteName}
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-1 px-4" onClick={() => setMobileOpen(false)}>

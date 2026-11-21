@@ -27,6 +27,10 @@ jobs:
       - name: ESLint
         run: npx eslint .
 
+      # api.ts 的 401 刷新/错误解析是全站关键路径，零容忍回归
+      - name: 单元测试
+        run: npm test
+
       # 构建既是产物验证也是最大的回归门禁：chunk 图完整性（动态 import 路径）
       # 在 build 阶段由 Rollup 静态保证，chunk 404 只会在线上才暴露
       - name: 构建

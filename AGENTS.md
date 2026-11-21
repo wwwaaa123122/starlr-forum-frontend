@@ -64,3 +64,17 @@ src/
 ## Git
 
 独立仓库 `github.com/wwwaaa123122/starlr-forum-frontend`（main，**中文提交信息**）。
+
+## 测试与 CI（2026-11-21 起）
+
+- **命令**：`npm test`（vitest，jsdom 环境）、CI 四门禁 = typecheck + eslint + test + build。
+- **测试文件**（`src/lib/*.test.tsx`、`src/pages/admin/*.test.tsx`）：
+  - api/auth：401 刷新单飞、TOKEN_REPLAY、登出清理、角色映射——**全站最关键路径，零容忍回归**
+  - admin 14 个 Tab 冒烟：接口返回 `{}` 最严苛形状，防整树崩溃（白屏）
+- **已知踩坑**（写组件时预防，写测试时参考）：
+  - 接口数据链式访问必须防御：`data?.x?.y ?? 默认`。历史上有 6 处 `data.x.y` 在空数据下整树卸载
+    （tsc/eslint 均无法发现，只有冒烟能抓）。新增 Tab/页面照此模式。
+  - Radix Tabs 在 jsdom 不响应原生 `.click()`，用 `@testing-library/user-event` 的 `user.click`。
+  - `SiteConfigProvider` 是 `useSiteConfig()` 拿到真实站点名的前提，未包裹时永远是 FALLBACK。
+  - vitest 统一 `environment: 'jsdom'`（localStorage stub 与 React 组件都需要）；组件测试后记得 `cleanup()`。
+  - `shadcn/no-unknown-classes` lint 会检查**测试文件里的字符串类名**，测试里也要写真实 Tailwind 类。

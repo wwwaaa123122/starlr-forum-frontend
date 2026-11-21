@@ -175,7 +175,7 @@ export function ServicesTab() {
           {/* 其它服务：平铺字段 */}
           {svc.key !== 'mail' && (
             <div className="space-y-2">
-              {svc.fields.map((f) => (
+              {(svc.fields ?? []).map((f) => (
                 <div key={f.name} className="flex items-center gap-2">
                   <Label className="w-44 shrink-0 text-xs">{f.label}</Label>
                   <Input

@@ -71,10 +71,10 @@ export function ReportsTab() {
       <div className="space-y-2">
         {isLoading ? (
           <Skeleton className="h-20 w-full" />
-        ) : (data?.reports.length ?? 0) === 0 ? (
+        ) : ((data?.reports?.length ?? 0)) === 0 ? (
           <p className="text-muted-foreground surface px-4 py-10 text-center text-sm">没有举报记录</p>
         ) : (
-          data!.reports.map((r) => (
+          (data!.reports ?? []).map((r) => (
             <div key={r.id} className="surface p-4">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Badge variant="outline">{r.targetType === 'post' ? '帖子' : r.targetType === 'reply' ? '回复' : '用户'}</Badge>

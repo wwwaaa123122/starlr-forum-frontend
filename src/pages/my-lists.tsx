@@ -154,7 +154,7 @@ function MyListPage({ kind }: { kind: ListKind }) {
       )}
 
       <p className="text-muted-foreground mt-4 text-center text-xs">
-        共 {formatNumber(data?.pagination.total ?? 0)} 篇 · 仅自己可见
+        共 {formatNumber(data?.pagination?.total ?? 0)} 篇 · 仅自己可见
       </p>
     </PageContainer>
   );

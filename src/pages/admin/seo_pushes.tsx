@@ -53,7 +53,7 @@ export function SeoPushesTab() {
   });
 
   const stat = (ch: string, st: string) =>
-    data?.stats.find((s) => s.channel === ch && s.status === st)?.n ?? 0;
+    (data?.stats ?? []).find((s) => s.channel === ch && s.status === st)?.n ?? 0;
 
   return (
     <div className="space-y-4">
@@ -154,7 +154,7 @@ export function SeoPushesTab() {
         </Table>
       </div>
 
-      {(data?.pagination.totalPages ?? 1) > 1 && (
+      {((data?.pagination?.totalPages ?? 1)) > 1 && (
         <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
       )}
 

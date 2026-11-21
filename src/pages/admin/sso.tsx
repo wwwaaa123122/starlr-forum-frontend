@@ -24,7 +24,7 @@ export function SsoTab() {
   if (data && !inited.current) {
     inited.current = true;
     setEnabled(data.enabled);
-    setOrigins(data.origins.join('\n'));
+    setOrigins((data.origins ?? []).join('\n'));
   }
 
   const saveMut = useMutation({
@@ -75,7 +75,7 @@ export function SsoTab() {
                 <TableCell className="text-muted-foreground text-xs">{ev.ip ?? '—'}</TableCell>
               </TableRow>
             ))}
-            {(data?.events.length ?? 0) === 0 && (
+            {((data?.events?.length ?? 0)) === 0 && (
               <TableRow><TableCell colSpan={4} className="text-muted-foreground py-6 text-center text-xs">暂无同步记录</TableCell></TableRow>
             )}
           </TableBody>

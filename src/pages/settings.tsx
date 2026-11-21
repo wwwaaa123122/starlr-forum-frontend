@@ -121,18 +121,14 @@ export function SettingsPage() {
       const form = new FormData();
       form.append('file', file);
       form.append('purpose', 'avatar');
-      const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}/api/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('xc.access') ?? ''}` },
-        body: form,
-      });
-      const data = (await res.json()) as { error?: { message: string }; url?: string };
-      if (!res.ok) throw new Error(data.error?.message ?? '上传失败');
+      // 用 api()（Bearer 注入 + 401 刷新 + 120s 超时），替代裸 fetch（无超时、401 不刷新）
+      const res = await api<{ url: string }>('/api/upload', { method: 'POST', body: form, timeoutMs: 120_000 });
+      void res;
       toast.success('头像已更新');
       await refreshUser();
       void queryClient.invalidateQueries({ queryKey: ['me'] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : '上传失败');
+      toast.error(e instanceof ApiClientError ? e.message : '上传失败');
     } finally {
       setUploading(false);
     }

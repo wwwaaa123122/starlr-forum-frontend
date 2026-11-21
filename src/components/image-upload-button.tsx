@@ -54,7 +54,8 @@ export function ImageUploadButton({
       const form = new FormData();
       form.append('file', file);
       form.append('purpose', purpose);
-      const res = await api<UploadResponse>('/api/upload', { method: 'POST', body: form });
+      // 大图（最大 5MB）在弱网下 30s 默认超时不够，放宽到 120s
+      const res = await api<UploadResponse>('/api/upload', { method: 'POST', body: form, timeoutMs: 120_000 });
       const alt = file.name.replace(/\.[a-z0-9]+$/i, '').slice(0, 30) || '图片';
       insertMarkdown(`![${alt}](${res.url})`);
       if (compressed) {

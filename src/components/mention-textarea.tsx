@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface MentionUser {
@@ -66,9 +67,8 @@ export function MentionTextarea({
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}/api/users/search?q=${encodeURIComponent(q)}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as { users: MentionUser[] };
+        // 用 api()（同源/跨域基址统一 + 5s 短超时：@提及搜索应快速放弃，不阻塞输入）
+        const data = await api<{ users: MentionUser[] }>(`/api/users/search?q=${encodeURIComponent(q)}`, { timeoutMs: 5_000 });
         setUsers(data.users ?? []);
         setActive(0);
       } catch {

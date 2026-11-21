@@ -23,9 +23,15 @@ export default defineConfig({
     target: 'es2020',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query'],
-          'vendor-markdown': ['react-markdown', 'remark-gfm', 'rehype-sanitize', 'rehype-highlight'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|@tanstack[\\/]react-query)[\\/]/.test(id)) {
+            return 'vendor-react';
+          }
+          if (/[\\/]node_modules[\\/](react-markdown|remark-|rehype-|unified|unist-|hast|mdast|micromark|decode-named-character-reference|character-entities|zwitch|vfile|lowlight|highlight\.js|devlop|bail|trough|@types[\\/]hast)[\\/]/.test(id)) {
+            return 'vendor-markdown';
+          }
+          return undefined;
         },
       },
     },

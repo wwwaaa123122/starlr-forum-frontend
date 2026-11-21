@@ -11,8 +11,84 @@ import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
-import rehypeHighlight from 'rehype-highlight';
+import { createLowlight, type LanguageFn } from 'lowlight';
 import { cn } from '@/lib/utils';
+
+// highlight.js 语言子集：只注册论坛常见语言，替代 lowlight 默认的 37 种 common
+// 全量注册，明显减小 vendor-markdown 产物体积（未覆盖语言回退为无高亮纯文本）。
+// 注意 rehype-highlight 的 `languages` 选项不会替换它默认静态 import 的 common，
+// 故此处内联一个精简版高亮插件（逻辑与 rehype-highlight 一致：仅处理 pre>code）。
+const highlightLanguages = {
+  javascript: () => import('highlight.js/lib/languages/javascript'),
+  typescript: () => import('highlight.js/lib/languages/typescript'),
+  json: () => import('highlight.js/lib/languages/json'),
+  bash: () => import('highlight.js/lib/languages/bash'),
+  shell: () => import('highlight.js/lib/languages/shell'),
+  sql: () => import('highlight.js/lib/languages/sql'),
+  css: () => import('highlight.js/lib/languages/css'),
+  xml: () => import('highlight.js/lib/languages/xml'),
+  markdown: () => import('highlight.js/lib/languages/markdown'),
+  python: () => import('highlight.js/lib/languages/python'),
+  go: () => import('highlight.js/lib/languages/go'),
+  rust: () => import('highlight.js/lib/languages/rust'),
+  java: () => import('highlight.js/lib/languages/java'),
+  yaml: () => import('highlight.js/lib/languages/yaml'),
+  diff: () => import('highlight.js/lib/languages/diff'),
+  c: () => import('highlight.js/lib/languages/c'),
+  cpp: () => import('highlight.js/lib/languages/cpp'),
+};
+
+const lowlight = createLowlight(
+  Object.fromEntries(
+    Object.entries(highlightLanguages).map(([name, load]) => [name, () => load().then((m) => m.default)]),
+  ) as unknown as Record<string, LanguageFn>,
+);
+
+/** code 块 language-* class → lowlight 语言名（不认识的返回 undefined，跳过高亮） */
+function codeLanguage(node: { properties?: { className?: unknown } }): string | undefined {
+  const list = node.properties?.className;
+  if (!Array.isArray(list)) return undefined;
+  for (const value of list) {
+    const match = typeof value === 'string' && value.match(/^language-(.+)$/);
+    if (match) return match[1];
+    if (value === 'no-highlight' || value === 'nohighlight') return undefined;
+  }
+  return undefined;
+}
+
+/** 精简版 rehype-highlight：只高亮已注册语言，detect=false 语义 */
+function rehypeHighlightSubset() {
+  type HastNode = {
+    tagName?: string;
+    properties?: { className?: unknown };
+    children?: Array<{ type: string; value?: string; children?: HastNode['children'] }>;
+  };
+  const walk = (node: unknown, parentTag?: string): void => {
+    const n = node as HastNode;
+    if (n.tagName === 'code' && parentTag === 'pre') {
+      const lang = codeLanguage(n);
+      if (lang) {
+        const className = Array.isArray(n.properties!.className) ? (n.properties!.className as string[]) : [];
+        if (!className.includes('hljs')) n.properties!.className = ['hljs', ...className];
+        const text = (n.children ?? [])
+          .map((child) => (child.type === 'text' ? String(child.value ?? '') : ''))
+          .join('');
+        let result;
+        try {
+          result = lowlight.highlight(lang, text, { prefix: 'hljs-' });
+        } catch {
+          return; // 未注册语言 / 高亮失败 → 保留纯文本
+        }
+        if (result.children.length > 0) n.children = result.children as HastNode['children'];
+        return;
+      }
+    }
+    if (Array.isArray(n.children)) {
+      for (const child of n.children) walk(child, n.tagName);
+    }
+  };
+  return (tree: unknown) => walk(tree);
+}
 
 /** @提及 → 站内用户链接（在 sanitize 之前跑，白名单放行 .mention） */
 function rehypeMentionLinks() {
@@ -73,7 +149,7 @@ export const MarkdownView = memo(function MarkdownView({ content, className }: M
         rehypePlugins={[
           rehypeMentionLinks,
           [rehypeSanitize, sanitizeSchema],
-          [rehypeHighlight, { detect: false, ignoreMissing: true }],
+          [rehypeHighlightSubset],
         ]}
         components={{
           a: ({ className, ...props }) =>

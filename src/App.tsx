@@ -1,27 +1,43 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { SiteFooter, SiteHeader } from '@/components/layout/site-header';
 import { CookieConsent } from '@/components/cookie-consent';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { ListSkeleton } from '@/components/ui/list-skeleton';
 import { initConsent } from '@/lib/consent';
 import { ScrollToTop } from '@/lib/use-page-title';
 import { HomePage } from '@/pages/home';
-import { CategoriesPage } from '@/pages/categories';
-import { PostDetailPage } from '@/pages/post-detail';
-import { PostEditorPage } from '@/pages/post-editor';
-import { LoginPage } from '@/pages/login';
-import OAuthCallback from '@/pages/oauth-callback';
-import { ForgotPasswordPage } from '@/pages/forgot-password';
-import { ResetPasswordPage } from '@/pages/reset-password';
-import { RegisterPage } from '@/pages/register';
-import { UserPage } from '@/pages/user';
-import { NotificationsPage } from '@/pages/notifications';
-import { SettingsPage } from '@/pages/settings';
-import { SearchPage } from '@/pages/search';
-import { AdminPage } from '@/pages/admin';
-import { NotFoundPage } from '@/pages/not-found';
-import { PrivacyPage, TermsPage } from '@/pages/legal';
-import { MyFavoritesPage, MyLikesPage } from '@/pages/my-lists';
-import { UnverifiedBanner, VerifyEmailPage } from '@/pages/verify-email';
+import { UnverifiedBanner } from '@/pages/verify-email';
+
+// 路由级代码分割：首页 / 顶栏横幅常驻，其余页面按需加载，减小首屏 JS
+const CategoriesPage = lazy(() => import('@/pages/categories').then((m) => ({ default: m.CategoriesPage })));
+const PostDetailPage = lazy(() => import('@/pages/post-detail').then((m) => ({ default: m.PostDetailPage })));
+const PostEditorPage = lazy(() => import('@/pages/post-editor').then((m) => ({ default: m.PostEditorPage })));
+const LoginPage = lazy(() => import('@/pages/login').then((m) => ({ default: m.LoginPage })));
+const OAuthCallback = lazy(() => import('@/pages/oauth-callback'));
+const ForgotPasswordPage = lazy(() => import('@/pages/forgot-password').then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('@/pages/reset-password').then((m) => ({ default: m.ResetPasswordPage })));
+const RegisterPage = lazy(() => import('@/pages/register').then((m) => ({ default: m.RegisterPage })));
+const UserPage = lazy(() => import('@/pages/user').then((m) => ({ default: m.UserPage })));
+const NotificationsPage = lazy(() => import('@/pages/notifications').then((m) => ({ default: m.NotificationsPage })));
+const SettingsPage = lazy(() => import('@/pages/settings').then((m) => ({ default: m.SettingsPage })));
+const SearchPage = lazy(() => import('@/pages/search').then((m) => ({ default: m.SearchPage })));
+const AdminPage = lazy(() => import('@/pages/admin').then((m) => ({ default: m.AdminPage })));
+const NotFoundPage = lazy(() => import('@/pages/not-found').then((m) => ({ default: m.NotFoundPage })));
+const PrivacyPage = lazy(() => import('@/pages/legal').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('@/pages/legal').then((m) => ({ default: m.TermsPage })));
+const MyLikesPage = lazy(() => import('@/pages/my-lists').then((m) => ({ default: m.MyLikesPage })));
+const MyFavoritesPage = lazy(() => import('@/pages/my-lists').then((m) => ({ default: m.MyFavoritesPage })));
+const VerifyEmailPage = lazy(() => import('@/pages/verify-email').then((m) => ({ default: m.VerifyEmailPage })));
+
+/** 路由切换时的加载骨架（与列表骨架一致的全宽占位） */
+function RouteFallback() {
+  return (
+    <div className="px-4 py-6">
+      <ListSkeleton rows={3} />
+    </div>
+  );
+}
 
 export default function App() {
   initConsent();
@@ -39,6 +55,7 @@ export default function App() {
       <UnverifiedBanner />
       <main id="main" className="flex-1">
         <ErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
@@ -64,6 +81,7 @@ export default function App() {
           <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </Suspense>
         </ErrorBoundary>
       </main>
       <SiteFooter />

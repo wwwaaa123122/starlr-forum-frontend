@@ -125,7 +125,7 @@ export function HomePage() {
                 </Button>
               }
             />
-          ) : (postsData?.posts.length ?? 0) === 0 ? (
+          ) : ((postsData?.posts?.length ?? 0)) === 0 ? (
             <PageMessage
               title={tag ? `没有带 #${tag} 标签的帖子` : '这里还没有帖子'}
               description={tag ? '换一个标签，或看看最新的讨论。' : '来发布第一篇，让这里热闹起来。'}

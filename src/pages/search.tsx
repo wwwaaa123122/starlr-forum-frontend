@@ -172,7 +172,7 @@ export function SearchPage() {
           <PageSection>
             {usersLoading ? (
               <p className="text-muted-foreground px-4 py-14 text-center text-sm">搜索中…</p>
-            ) : (usersData?.users.length ?? 0) === 0 ? (
+            ) : ((usersData?.users?.length ?? 0)) === 0 ? (
               <PageMessage title="没有找到相关用户" description="可以试试用户名、昵称，或直接输入 UID。" />
             ) : (
               usersData!.users.map((u) => (

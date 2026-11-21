@@ -166,7 +166,7 @@ export function UserPage() {
                 <PostCardSkeleton />
                 <PostCardSkeleton />
               </>
-            ) : (postsData?.posts.length ?? 0) === 0 ? (
+            ) : ((postsData?.posts?.length ?? 0)) === 0 ? (
               <PageMessage title="还没有发布过帖子" description={isSelf ? '去发一篇，让大家认识你。' : undefined} />
             ) : (
               postsData!.posts.map((post) => <PostCard key={post.id} post={post} />)
@@ -177,7 +177,7 @@ export function UserPage() {
 
         <TabsContent value="replies">
           <TabListShell>
-            {(repliesData?.replies.length ?? 0) === 0 ? (
+            {((repliesData?.replies?.length ?? 0)) === 0 ? (
               <PageMessage title="还没有发表过回复" />
             ) : (
               repliesData!.replies.map((reply) => (
@@ -195,7 +195,7 @@ export function UserPage() {
 
         <TabsContent value="likes">
           <TabListShell>
-            {(likesData?.posts.length ?? 0) === 0 ? (
+            {((likesData?.posts?.length ?? 0)) === 0 ? (
               <PageMessage title="还没有喜欢的帖子" description={isSelf ? '在帖子下方点个赞就会出现在这里。' : undefined} />
             ) : (
               likesData!.posts.map((post) => <PostCard key={post.id} post={post} />)

@@ -199,7 +199,7 @@ export function SettingsPage() {
             <p className="text-muted-foreground text-xs">用户名用于登录与 @ 提及，暂不支持修改</p>
           </div>
 
-          {profile?.user.email && (
+          {(profile?.user?.email) && (
             <div className="space-y-1.5">
               <Label>邮箱</Label>
               <Input value={profile.user.email} disabled />

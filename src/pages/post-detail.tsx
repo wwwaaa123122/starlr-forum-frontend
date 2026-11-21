@@ -21,6 +21,7 @@ import { api, ApiClientError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { usePageTitle } from '@/lib/use-page-title';
 import { MarkdownView } from '@/components/markdown';
+import { ReportDialog } from '@/components/report-dialog';
 import { MentionTextarea } from '@/components/mention-textarea';
 import { PageContainer, PageMessage, PageSection } from '@/components/layout/page';
 import { PaginationControls } from '@/components/pagination-controls';
@@ -65,76 +66,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 // ---------------------------------------------------------------
 // 举报对话框
 // ---------------------------------------------------------------
-function ReportDialog({
-  open,
-  onOpenChange,
-  targetType,
-  targetId,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  targetType: 'post' | 'reply';
-  targetId: string;
-}) {
-  const [reason, setReason] = useState('spam');
-  const [detail, setDetail] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const submit = async () => {
-    setSubmitting(true);
-    try {
-      await api('/api/reports', { method: 'POST', body: { targetType, targetId, reason, detail } });
-      toast.success('举报已提交，管理员会尽快处理');
-      onOpenChange(false);
-      setDetail('');
-    } catch (e) {
-      toast.error(e instanceof ApiClientError ? e.message : '举报失败');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>举报内容</DialogTitle>
-          <DialogDescription>请选择举报原因，恶意举报可能导致账号受限。</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>原因</Label>
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="spam">垃圾广告 / 灌水</SelectItem>
-                <SelectItem value="abuse">辱骂 / 人身攻击</SelectItem>
-                <SelectItem value="porn">色情低俗</SelectItem>
-                <SelectItem value="illegal">违法违规</SelectItem>
-                <SelectItem value="other">其他</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>补充说明（可选）</Label>
-            <Textarea value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={1000} rows={3} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            取消
-          </Button>
-          <Button onClick={() => void submit()} disabled={submitting}>
-            提交举报
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ---------------------------------------------------------------
 // 单条回复
 // ---------------------------------------------------------------

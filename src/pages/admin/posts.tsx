@@ -101,14 +101,13 @@ export function PostsTab() {
                         }}
                         disabled={moveMutation.isPending}
                       >
-                        {/* 触发器显示当前分类名（value 命中 SelectItem 后由 Radix 渲染；
-                            分类列表未加载完成时回退行内 categoryName，避免空白） */}
+                        {/* 触发器文字自算（不依赖 Radix SelectValue：value 命中但
+                            SelectContent 未挂载时 SelectValue 渲染为空——即
+                            「未展开时框空白」的根因）。展开后由 SelectItem 接管高亮 */}
                         <SelectTrigger size="sm" className="h-7 w-32 text-xs" aria-label="移动分类" title={p.categoryName}>
-                          {catsData?.categories?.some((c) => c.id === p.categoryId) ? (
-                            <SelectValue />
-                          ) : (
-                            <span className="truncate">{p.categoryName}</span>
-                          )}
+                          <span className="truncate">
+                            {(catsData?.categories ?? []).find((c) => c.id === p.categoryId)?.name ?? p.categoryName}
+                          </span>
                         </SelectTrigger>
                         <SelectContent>
                           {(catsData?.categories ?? []).map((c) => (

@@ -65,7 +65,7 @@ export function SessionsCard() {
     queryKey: ['my-sessions'],
     // 通过本机刷新令牌识别当前浏览器所在会话（旧 access token 无 sid 声明时也能正确标记）
     queryFn: async () => {
-      const data = await api<SessionItem>('/api/me/sessions');
+      const data = (await api<SessionItem>('/api/me/sessions')) ?? { sessions: [], total: 0 };
       const rt = getStoredRefreshToken();
       let currentChain: string | null = null;
       if (rt) {
@@ -79,9 +79,10 @@ export function SessionsCard() {
           /* 识别失败则按服务端 sid 标记 */
         }
       }
+      const sessions = data.sessions ?? [];
       const list = currentChain
-        ? data.sessions.map((sess) => ({ ...sess, current: sess.chainRoot === currentChain }))
-        : data.sessions;
+        ? sessions.map((sess) => ({ ...sess, current: sess.chainRoot === currentChain }))
+        : sessions;
       return { ...data, sessions: list };
     },
     enabled: Boolean(user),

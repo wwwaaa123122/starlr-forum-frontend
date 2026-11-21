@@ -81,8 +81,7 @@ export function NotificationsTab() {
         />
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs">发送频率限制：每小时 10 次</span>
+      <div className="flex items-center justify-end">
         <Button onClick={() => void send()} disabled={sending || !title.trim()}>
           <Send className="size-4" /> {sending ? '发送中…' : '发送通知'}
         </Button>

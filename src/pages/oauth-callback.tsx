@@ -27,7 +27,10 @@ export default function OAuthCallback() {
       try {
         await oauthExchange(code);
         const next = params.get('next');
-        navigate(next && next.startsWith('/') ? next : '/', { replace: true });
+        // 仅接受站内绝对路径：排除 //、/\、control-char 等协议相对/异常写法，防 open redirect
+        const safeNext =
+          next && /^\/[^/\\]/.test(next) && !/[\r\n]/.test(next) ? next : '/';
+        navigate(safeNext, { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : '登录失败，请重试');
       }

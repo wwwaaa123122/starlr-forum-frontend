@@ -13,9 +13,10 @@ React 19 + Vite 7 + TypeScript + Tailwind v4 + shadcn/ui（Radix）+ TanStack Qu
 
 ```bash
 npm run dev          # Vite @ :5173（API 代理 :8787）
-npm run build        # tsc -b npm run build        # tsc -b && vite build → dist/（仅供本地 wrangler dev）npm run build        # tsc -b && vite build → dist/（仅供本地 wrangler dev） vite build → dist/（本地 dev 用）
+npm run build        # tsc -b && vite build → dist/（本地 dev 用）
 VITE_API_BASE=https://i.182030.xyz npm run build:frontend   # → dist-f/（frontend.182030.xyz 部署产物）
 npm run typecheck
+npm test             # vitest（91 用例）
 ```
 
 ## 代码地图
@@ -33,7 +34,9 @@ src/
   components/ui/list-skeleton.tsx # 列表骨架屏
   components/        # category-icon / cookie-consent / image-upload-button /
                      # markdown / mention-textarea / layout …
-  pages/admin.tsx    # 2362 行单文件管理后台（X 前端已拆分为 pages/admin/*）
+  pages/admin/       # 管理后台模块（index.tsx 路由壳 + 14 个 Tab 各自独立文件
+                     #   + icon-picker + shared.ts 共享类型，原 2372 行单文件已拆分）
+  pages/settings/    # 设置页子组件（sessions-card / password-card / security-card）
   pages/             # home categories post-detail post-editor login register
                      # forgot-password reset-password settings user notifications
                      # search my-lists legal not-found
@@ -67,10 +70,13 @@ src/
 
 ## 测试与 CI（2026-11-21 起）
 
-- **命令**：`npm test`（vitest，jsdom 环境）、CI 四门禁 = typecheck + eslint + test + build。
-- **测试文件**（`src/lib/*.test.tsx`、`src/pages/admin/*.test.tsx`）：
-  - api/auth：401 刷新单飞、TOKEN_REPLAY、登出清理、角色映射——**全站最关键路径，零容忍回归**
-  - admin 14 个 Tab 冒烟：接口返回 `{}` 最严苛形状，防整树崩溃（白屏）
+- **命令**：`npm test`（vitest，jsdom 环境，**91 用例 / 11 文件**）、CI 四门禁 = typecheck + eslint + test + build。
+- **测试清单**：
+  - `lib/api.test.ts`：401 刷新重试 / NO_RETRY_CODES / 刷新失败不重试 / 并发单飞 / 错误解析
+  - `lib/auth.test.tsx`：初始化态、角色映射、登出清理（含后端失败）、401→刷新→重试集成、重放清空、jwtExp
+  - `lib/utils.test.ts`、`lib/consent.test.ts`、`lib/image-compress.test.ts`、`lib/base-url.test.ts`、`lib/site-config.test.tsx`、`lib/use-page-title.test.tsx`
+  - `pages/AdminSmoke.test.tsx` + `pages/admin/AdminTabs*.test.tsx`：权限路由 + 14 个 Tab 冒烟
+    （接口返回 `{}` 最严苛形状，防整树崩溃；ReportsTab 兼作历史修复的回归哨兵）
 - **已知踩坑**（写组件时预防，写测试时参考）：
   - 接口数据链式访问必须防御：`data?.x?.y ?? 默认`。历史上有 6 处 `data.x.y` 在空数据下整树卸载
     （tsc/eslint 均无法发现，只有冒烟能抓）。新增 Tab/页面照此模式。

@@ -172,3 +172,55 @@ describe('刷新单飞（并发 401 只触发一次刷新）', () => {
     expect(refreshCalls).toBe(1);
   });
 });
+
+describe('请求超时', () => {
+  /** 挂死 fetch：只在 signal 中止时落地（与真实 fetch abort 语义一致） */
+  function hangingFetch(_input: string, init?: RequestInit): Promise<Response> {
+    return new Promise<Response>((_r, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal!.reason));
+    });
+  }
+
+  it('默认 30s 超时：挂死请求最终抛错（DOMException）', async () => {
+    vi.useFakeTimers();
+    fetchHandler = hangingFetch;
+    let err: unknown = null;
+    const p = api('/api/slow').catch((e) => { err = e; });
+    await vi.advanceTimersByTimeAsync(30_000);
+    await p;
+    expect(err).toBeInstanceOf(DOMException);
+    expect((err as DOMException).message).toContain('超时');
+    vi.useRealTimers();
+  });
+
+  it('timeoutMs 覆盖默认值（1s 超时在 1s 触发）', async () => {
+    vi.useFakeTimers();
+    fetchHandler = hangingFetch;
+    let err: unknown = null;
+    const p = api('/api/slow', { timeoutMs: 1_000 }).catch((e) => { err = e; });
+    await vi.advanceTimersByTimeAsync(1_000);
+    await p;
+    expect(err).toBeInstanceOf(DOMException);
+    vi.useRealTimers();
+  });
+
+  it('timeoutMs: 0 关闭超时（60s 后请求仍未被中断）', async () => {
+    vi.useFakeTimers();
+    let resolved: Response | null = null;
+    fetchHandler = () => new Promise<Response>((r) => setTimeout(() => { resolved = jsonResponse(200, { late: true }); r(resolved!); }, 60_000));
+    const p = api('/api/slow-late', { timeoutMs: 0 });
+    await vi.advanceTimersByTimeAsync(60_000);
+    await expect(p).resolves.toEqual({ late: true });
+    vi.useRealTimers();
+  });
+
+  it('正常响应先于超时完成，计时器被清理（不泄漏）', async () => {
+    vi.useFakeTimers();
+    fetchHandler = () => jsonResponse(200, { ok: true });
+    const result = await api('/api/fast');
+    expect(result).toEqual({ ok: true });
+    // 快进远超超时阈值，不应有任何挂起的定时器报错
+    await vi.advanceTimersByTimeAsync(60_000);
+    vi.useRealTimers();
+  });
+});

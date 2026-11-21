@@ -35,70 +35,86 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** 401 时是否尝试刷新后重试（默认 true） */
   retryOn401?: boolean;
+  /** 超时毫秒数；默认 30s（上传等慢请求可放宽，传 0 关闭超时） */
+  timeoutMs?: number;
 }
 
+/** 默认请求超时：30s。挂死请求会让页面骨架屏永不消失，且阻塞刷新链路 */
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, token, signal, retryOn401 = true } = options;
+  const { method = 'GET', body, token, signal, retryOn401 = true, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
 
-  const doFetch = async (accessToken: string | undefined) => {
-    const headers: Record<string, string> = {};
-    // FormData（multipart 上传）不能 JSON 序列化，Content-Type 由浏览器自动附带边界
-    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
-    if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
-    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
-    // 跨域部署（VITE_API_BASE 指向独立 API 域）时拼接完整地址；同源开发为空串
-    const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}${path}`, {
-      method,
-      headers,
-      body: isForm ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
-      signal,
-    });
-    return res;
-  };
+  // 合并调用方 signal 与超时：任一触发即中止
+  const timeoutCtrl = timeoutMs > 0 ? new AbortController() : null;
+  const timer = timeoutCtrl ? setTimeout(() => timeoutCtrl.abort(new DOMException('请求超时', 'TimeoutError')), timeoutMs) : null;
+  const compositeSignal = signal && timeoutCtrl
+    ? AbortSignal.any([signal, timeoutCtrl.signal])
+    : (signal ?? timeoutCtrl?.signal);
 
-  let accessToken = token ?? getStoredAccessToken() ?? undefined;
-  let res = await doFetch(accessToken);
+  try {
+    const doFetch = async (accessToken: string | undefined) => {
+      const headers: Record<string, string> = {};
+      // FormData（multipart 上传）不能 JSON 序列化，Content-Type 由浏览器自动附带边界
+      const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+      if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+      // 跨域部署（VITE_API_BASE 指向独立 API 域）时拼接完整地址；同源开发为空串
+      const res = await fetch(`${import.meta.env.VITE_API_BASE ?? ''}${path}`, {
+        method,
+        headers,
+        body: isForm ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
+        signal: compositeSignal,
+      });
+      return res;
+    };
 
-  // 401 → 尝试刷新 Token 后重试一次
-  if (res.status === 401 && retryOn401 && refreshHandler) {
-    let errBody: ApiErrorBody | null = null;
-    try {
-      errBody = (await res.clone().json()) as ApiErrorBody;
-    } catch {
-      /* ignore */
-    }
-    const code = errBody?.error.code;
-    if (!code || !NO_RETRY_CODES.has(code)) {
-      const newToken = await refreshHandler();
-      if (newToken) {
-        accessToken = newToken;
-        res = await doFetch(accessToken);
+    let accessToken = token ?? getStoredAccessToken() ?? undefined;
+    let res = await doFetch(accessToken);
+
+    // 401 → 尝试刷新 Token 后重试一次
+    if (res.status === 401 && retryOn401 && refreshHandler) {
+      let errBody: ApiErrorBody | null = null;
+      try {
+        errBody = (await res.clone().json()) as ApiErrorBody;
+      } catch {
+        /* ignore */
+      }
+      const code = errBody?.error.code;
+      if (!code || !NO_RETRY_CODES.has(code)) {
+        const newToken = await refreshHandler();
+        if (newToken) {
+          accessToken = newToken;
+          res = await doFetch(accessToken);
+        }
       }
     }
-  }
 
-  if (res.status === 204) return undefined as T;
+    if (res.status === 204) return undefined as T;
 
-  let data: unknown = null;
-  const text = await res.text();
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = null;
+    let data: unknown = null;
+    const text = await res.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = null;
+      }
     }
-  }
 
-  if (!res.ok) {
-    const errBody = data as ApiErrorBody | null;
-    throw new ApiClientError(
-      res.status,
-      errBody?.error?.code ?? 'UNKNOWN',
-      errBody?.error?.message ?? `请求失败（${res.status}）`,
-      errBody?.error?.details,
-    );
+    if (!res.ok) {
+      const errBody = data as ApiErrorBody | null;
+      throw new ApiClientError(
+        res.status,
+        errBody?.error?.code ?? 'UNKNOWN',
+        errBody?.error?.message ?? `请求失败（${res.status}）`,
+        errBody?.error?.details,
+      );
+    }
+    return data as T;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
-  return data as T;
 }
 
 export function getStoredAccessToken(): string | null {

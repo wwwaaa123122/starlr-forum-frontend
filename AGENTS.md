@@ -7,14 +7,16 @@ React 19 + Vite 7 + TypeScript + Tailwind v4 + shadcn/ui（Radix）+ TanStack Qu
 - Worker `forum-frontend-classic`（`../backend/wrangler.frontend-classic.jsonc`）托管 `dist-f/`，域名 **frontend.182030.xyz**（custom_domain）。
 - 零数据绑定，浏览器跨域直连 `forum-backend`（i.182030.xyz）；CORS/OAuth 白名单已在 backend 放行本域名。
 - 全站 UI 直角（--radius: 0 + rounded-none）；管理后台含「推送记录」Tab（SEO 推送接口配置界面）。
-- 构建跨域产物：`VITE_API_BASE=https://i.182030.xyz npm run build:frontend` → dist-f/（勿提交，已 gitignore）。
+- 构建部署产物：`npm run build:frontend` → dist-f/（勿提交，已 gitignore）。
+  **同域模式（不设 VITE_API_BASE）**：starlr.tech 主域与 frontend.182030.xyz 都经
+  service binding 代理 /api 到主 Worker，前端走相对路径，无跨域引用（2026-11-21 起）。
 
 ## 命令
 
 ```bash
 npm run dev          # Vite @ :5173（API 代理 :8787）
 npm run build        # tsc -b && vite build → dist/（本地 dev 用）
-VITE_API_BASE=https://i.182030.xyz npm run build:frontend   # → dist-f/（frontend.182030.xyz 部署产物）
+npm run build:frontend   # → dist-f/（部署产物，同域模式：不设 VITE_API_BASE）
 npm run typecheck
 npm test             # vitest（91 用例）
 ```

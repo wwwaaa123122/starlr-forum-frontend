@@ -133,6 +133,7 @@ export interface AdminPost {
   replyCount: number;
   createdAt: string;
   authorName: string;
+  categoryId: string;
   categoryName: string;
 }
 

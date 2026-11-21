@@ -22,6 +22,12 @@ export function PostsTab() {
       api<{ posts: AdminPost[]; pagination: Pagination }>(`/api/admin/posts?page=1&pageSize=30&status=${status}`),
   });
 
+  // 分类列表（移动分类下拉的数据源）
+  const { data: catsData } = useQuery({
+    queryKey: ['admin', 'categories-for-move'],
+    queryFn: () => api<{ categories: { id: string; name: string }[] }>('/api/categories'),
+  });
+
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['admin'] });
 
   const act = async (id: string, action: string, method: 'POST' | 'DELETE' = 'POST') => {
@@ -33,6 +39,16 @@ export function PostsTab() {
       toast.error(errMsg(e));
     }
   };
+
+  const moveMutation = useMutation({
+    mutationFn: ({ postId, categoryId }: { postId: string; categoryId: string }) =>
+      api(`/api/admin/posts/${postId}/category`, { method: 'PATCH', body: { categoryId } }),
+    onSuccess: () => {
+      toast.success('分类已移动');
+      refresh();
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
 
   return (
     <div className="space-y-3">
@@ -74,7 +90,30 @@ export function PostsTab() {
                     </Link>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-xs">{p.authorName}</TableCell>
-                  <TableCell className="whitespace-nowrap text-xs">{p.categoryName}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">
+                    {p.isDeleted ? (
+                      p.categoryName
+                    ) : (
+                      <Select
+                        value={p.categoryId}
+                        onValueChange={(v) => {
+                          if (v !== p.categoryId) moveMutation.mutate({ postId: p.id, categoryId: v });
+                        }}
+                        disabled={moveMutation.isPending}
+                      >
+                        <SelectTrigger size="sm" className="h-7 w-32 text-xs" aria-label="移动分类">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(catsData?.categories ?? []).map((c) => (
+                            <SelectItem key={c.id} value={c.id} className="text-xs">
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {p.isDeleted ? (
                       <Badge variant="destructive">已删除</Badge>

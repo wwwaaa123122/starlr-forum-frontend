@@ -151,19 +151,19 @@ export function SearchPage() {
                   </Button>
                 }
               />
-            ) : (postsData?.posts.length ?? 0) === 0 ? (
+            ) : ((postsData?.posts?.length ?? 0)) === 0 ? (
               <PageMessage
                 title="没有找到相关帖子"
                 description={category ? '试试取消分类筛选，或换一个关键词。' : '换一个关键词，或减少筛选条件。'}
               />
             ) : (
-              postsData!.posts.map((post) => <PostCard key={post.id} post={post} />)
+              ((postsData!.posts ?? []).map((post) => <PostCard key={post.id} post={post} />))
             )}
           </PageSection>
           <PaginationControls pagination={postsData?.pagination} onPageChange={(p) => setParam('page', String(p))} />
           {postsData?.mode && (
             <p className="text-muted-foreground text-center text-xs">
-              共 {postsData.pagination.total} 条结果（{postsData.mode === 'fts' ? '全文索引' : '模糊匹配'}）
+              共 {(postsData.pagination?.total ?? 0)} 条结果（{postsData.mode === 'fts' ? '全文索引' : '模糊匹配'}）
             </p>
           )}
         </>

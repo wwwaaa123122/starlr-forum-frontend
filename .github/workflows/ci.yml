@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: typecheck + lint + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: TypeScript 类型检查
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npx eslint .
+
+      # 构建既是产物验证也是最大的回归门禁：chunk 图完整性（动态 import 路径）
+      # 在 build 阶段由 Rollup 静态保证，chunk 404 只会在线上才暴露
+      - name: 构建
+        run: npm run build

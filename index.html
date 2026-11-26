@@ -15,18 +15,8 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // 主题无闪烁初始化（与 next-themes storageKey/attribute/defaultTheme 一致）
-      (function () {
-        try {
-          var t = localStorage.getItem('xc-theme');
-          if (t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-          }
-          document.documentElement.style.colorScheme = t === 'light' ? 'light' : 'dark';
-        } catch (e) {}
-      })();
-    </script>
+    <!-- 外置：CSP script-src 不允许内联脚本，内联主题初始化会被拦截（深色模式闪白） -->
+    <script src="/theme-init.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

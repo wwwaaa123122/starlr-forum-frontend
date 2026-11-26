@@ -87,13 +87,18 @@ export function UnverifiedBanner() {
   const { user } = useAuth();
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  if (!user || user.accountStatus !== 'unverified') return null;
-
+  // 注意：hooks 必须在任何提前 return 之前调用完。
+  // 历史实现把 `if (!user || ...) return null` 放在 useEffect 之前，
+  // 登录态从 null 变为「未验证」时 hook 数量变化 → React 抛
+  // "Rendered more hooks than during the previous render"，整站白屏。
   useEffect(() => {
     if (cooldown <= 0) return;
     const t = setInterval(() => setCooldown((v) => Math.max(0, v - 1)), 1000);
     return () => clearInterval(t);
   }, [cooldown]);
+
+  const unverified = Boolean(user && user.accountStatus === 'unverified');
+  if (!unverified) return null;
 
   const resend = async () => {
     setSending(true);

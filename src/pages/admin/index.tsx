@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -25,6 +25,19 @@ export function AdminPage() {
   const { user, isModerator, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   usePageTitle('管理后台');
+
+  // Tab 与 URL 同步：刷新/分享链接后仍停在原分区；无权访问的分区回落到概览
+  const [searchParams, setSearchParams] = useSearchParams();
+  const allowedTabs = isAdmin
+    ? ['overview', 'users', 'posts', 'categories', 'reports', 'views', 'notify', 'moderators', 'admins', 'services', 'sso', 'audit', 'seo-pushes']
+    : ['overview', 'posts', 'categories', 'reports', 'views'];
+  const tabParam = searchParams.get('tab') ?? 'overview';
+  const tab = allowedTabs.includes(tabParam) ? tabParam : 'overview';
+  const changeTab = (next: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    setSearchParams(params, { replace: true });
+  };
 
   if (loading) {
     return (
@@ -60,7 +73,7 @@ export function AdminPage() {
         actions={!isAdmin && <Badge variant="secondary">版主权限</Badge>}
       />
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={changeTab}>
         <TabsList className="mb-4 w-full max-w-full flex-nowrap justify-start overflow-x-auto [&>[role=tab]]:flex-none">
           <TabsTrigger value="overview">概览</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">用户</TabsTrigger>}

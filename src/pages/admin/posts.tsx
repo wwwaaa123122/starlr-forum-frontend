@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PaginationControls } from '@/components/pagination-controls';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AdminPost, Pagination } from '@/lib/types';
 import { errMsg } from './shared';
@@ -15,11 +16,14 @@ import { errMsg } from './shared';
 export function PostsTab() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState('normal');
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'posts', status],
+    queryKey: ['admin', 'posts', status, page],
     queryFn: () =>
-      api<{ posts: AdminPost[]; pagination: Pagination }>(`/api/admin/posts?page=1&pageSize=30&status=${status}`),
+      api<{ posts: AdminPost[]; pagination: Pagination }>(
+        `/api/admin/posts?page=${page}&pageSize=30&status=${status}`,
+      ),
   });
 
   // 分类列表（移动分类下拉的数据源）
@@ -52,7 +56,13 @@ export function PostsTab() {
 
   return (
     <div className="space-y-3">
-      <Select value={status} onValueChange={setStatus}>
+      <Select
+        value={status}
+        onValueChange={(v) => {
+          setStatus(v);
+          setPage(1);
+        }}
+      >
         <SelectTrigger size="sm" className="w-32">
           <SelectValue />
         </SelectTrigger>
@@ -144,7 +154,15 @@ export function PostsTab() {
                           <Button variant="outline" size="sm" onClick={() => void act(p.id, p.isFeatured ? 'unfeature' : 'feature')}>
                             {p.isFeatured ? '取消精华' : '加精'}
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => void act(p.id, `posts/${p.id}`, 'DELETE')}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm(`确认删除《${p.title}》？管理员可在「已删除」里恢复。`)) {
+                                void act(p.id, `posts/${p.id}`, 'DELETE');
+                              }
+                            }}
+                          >
                             <Trash2 className="size-3.5" /> 删除
                           </Button>
                         </>
@@ -157,6 +175,7 @@ export function PostsTab() {
           </TableBody>
         </Table>
       </div>
+      <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
     </div>
   );
 }

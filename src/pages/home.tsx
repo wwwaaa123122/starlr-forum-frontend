@@ -17,8 +17,10 @@ import type { Category, PostSummary, Pagination } from '@/lib/types';
 export function HomePage() {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const page = Number(searchParams.get('page') ?? '1');
-  const sort = (searchParams.get('sort') ?? 'new') as 'new' | 'hot';
+  // URL 参数不可信：page=abc/-1 直接丢给后端会 400，整页变成错误态；这里收敛到合法值
+  const pageRaw = Number.parseInt(searchParams.get('page') ?? '1', 10);
+  const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? pageRaw : 1;
+  const sort: 'new' | 'hot' = searchParams.get('sort') === 'hot' ? 'hot' : 'new';
   const tag = searchParams.get('tag') ?? '';
   const { user } = useAuth();
   const { siteDescription, siteTagline } = useSiteConfig();

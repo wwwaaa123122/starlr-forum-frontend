@@ -9,7 +9,6 @@ import { usePageTitle } from '@/lib/use-page-title';
 import { AuthShell } from '@/components/layout/auth-shell';
 import { Turnstile, fetchSiteConfig } from '@/components/turnstile';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -55,7 +54,7 @@ export function RegisterPage() {
         password,
         turnstileToken: turnstileToken || undefined,
       });
-      toast.success('注册成功！请到邮箱点击激活链接完成验证');
+      toast.success(emailRequired ? '注册成功！请到邮箱点击激活链接完成验证' : '注册成功！');
       navigate('/');
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -109,6 +108,7 @@ export function RegisterPage() {
           <Label htmlFor="username">用户名</Label>
           <Input
             id="username"
+            required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="3-24 位，中文/字母/数字/下划线"
@@ -129,13 +129,21 @@ export function RegisterPage() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">邮箱{emailRequired ? '' : '（可选）'}</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          <Input
+            id="email"
+            type="email"
+            required={emailRequired}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">密码</Label>
           <Input
             id="password"
             type="password"
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="至少 8 位，包含字母、数字或符号"
@@ -147,14 +155,23 @@ export function RegisterPage() {
           <Input
             id="confirm"
             type="password"
+            required
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             autoComplete="new-password"
           />
         </div>
         <Turnstile siteKey={siteKey} onToken={setTurnstileToken} />
-        <label className="flex items-start gap-3 text-xs leading-relaxed">
-          <Switch checked={agreed} onCheckedChange={setAgreed} aria-label="同意用户协议与隐私政策" />
+        {/* 同意条款用原生 checkbox：Switch 语义是「开关设置」，且 Radix Switch 放在 label 里
+            点击文字不会切换（label 只关联表单控件）→ 用户以为点了却仍未勾选。 */}
+        <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="accent-primary mt-0.5 size-4 shrink-0 cursor-pointer"
+            aria-label="同意用户协议与隐私政策"
+          />
           <span className="text-muted-foreground">
             我已阅读并同意
             <Link to="/terms" target="_blank" className="text-primary hover:underline">

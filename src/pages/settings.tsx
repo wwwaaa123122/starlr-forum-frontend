@@ -55,7 +55,9 @@ export function SettingsPage() {
     onError: () => toast.error('发起绑定失败，请重试'),
   });
   const unbind = useMutation({
-    mutationFn: () => api('/api/auth/oauth/github/unbind', { method: 'POST', body: JSON.stringify({ password: unbindPassword }) }),
+    // body 传对象：api() 内部会 JSON.stringify。历史实现多套了一层 JSON.stringify，
+    // 后端 c.req.json() 拿到字符串 → body.password 永远 undefined → 解绑必定 400。
+    mutationFn: () => api('/api/auth/oauth/github/unbind', { method: 'POST', body: { password: unbindPassword } }),
     onSuccess: () => {
       setUnbindOpen(false);
       setUnbindPassword('');
@@ -199,10 +201,14 @@ export function SettingsPage() {
             <p className="text-muted-foreground text-xs">用户名用于登录与 @ 提及，暂不支持修改</p>
           </div>
 
-          {(profile?.user?.email) && (
+          {/* 无邮箱注册模式会写入 noemail-<id>@users.invalid 占位地址：不要当真实邮箱展示 */}
+          {profile?.user?.email && !profile.user.email.endsWith('@users.invalid') && (
             <div className="space-y-1.5">
               <Label>邮箱</Label>
               <Input value={profile.user.email} disabled />
+              <p className="text-muted-foreground text-xs">
+                {profile.user.emailVerified ? '已验证' : '未验证：请查收激活邮件'}
+              </p>
             </div>
           )}
 

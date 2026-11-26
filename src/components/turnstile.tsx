@@ -16,21 +16,24 @@ declare global {
   }
 }
 
-let scriptLoading = false;
+let scriptLoading: Promise<void> | null = null;
 
+/** 脚本只加载一次；失败时清空缓存，让下一次调用可以重试（历史实现失败后永久挂起） */
 function loadTurnstileScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.turnstile) return resolve();
+  if (window.turnstile) return Promise.resolve();
+  if (scriptLoading) return scriptLoading;
+  scriptLoading = new Promise<void>((resolve, reject) => {
     window.onTurnstileLoad = () => resolve();
-    if (!scriptLoading) {
-      scriptLoading = true;
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit';
-      script.async = true;
-      script.onerror = () => reject(new Error('Turnstile 加载失败'));
-      document.head.appendChild(script);
-    }
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit';
+    script.async = true;
+    script.onerror = () => {
+      scriptLoading = null;
+      reject(new Error('Turnstile 加载失败'));
+    };
+    document.head.appendChild(script);
   });
+  return scriptLoading;
 }
 
 interface TurnstileProps {
@@ -42,6 +45,7 @@ export function Turnstile({ siteKey, onToken }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
@@ -59,7 +63,8 @@ export function Turnstile({ siteKey, onToken }: TurnstileProps) {
         });
       })
       .catch(() => {
-        /* 脚本加载失败：不阻塞表单，后端会再次校验 */
+        // 脚本加载失败（广告拦截/网络）：给出可见提示，否则用户只会看到「人机校验失败」
+        if (!cancelled) setFailed(true);
       });
 
     return () => {
@@ -77,6 +82,13 @@ export function Turnstile({ siteKey, onToken }: TurnstileProps) {
   }, [siteKey]);
 
   if (!siteKey) return null;
+  if (failed) {
+    return (
+      <p className="text-destructive text-xs" role="alert">
+        人机验证组件加载失败，请检查网络/广告拦截后刷新页面重试。
+      </p>
+    );
+  }
 
   return (
     <div className={visible ? '' : 'hidden'}>

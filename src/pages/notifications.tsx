@@ -150,17 +150,32 @@ export function NotificationsPage() {
                       {systemPayload.body && (
                         <p className="text-muted-foreground mt-0.5 line-clamp-3 text-xs">{systemPayload.body}</p>
                       )}
-                      {systemPayload.link && (
-                        <Link
-                          to={systemPayload.link}
-                          onClick={() => {
-                            if (!read) markRead.mutate([n.id]);
-                          }}
-                          className="text-primary mt-1 inline-block text-xs hover:underline"
-                        >
-                          查看详情 →
-                        </Link>
-                      )}
+                      {systemPayload.link &&
+                        // 后台系统通知允许外链（http/https）。用 <Link> 会把外链当站内路径解析，
+                        // 变成 /https://... 的 404 路由；外链必须用 <a>。
+                        (/^https?:\/\//i.test(systemPayload.link) ? (
+                          <a
+                            href={systemPayload.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              if (!read) markRead.mutate([n.id]);
+                            }}
+                            className="text-primary mt-1 inline-block text-xs hover:underline"
+                          >
+                            查看详情 →
+                          </a>
+                        ) : (
+                          <Link
+                            to={systemPayload.link}
+                            onClick={() => {
+                              if (!read) markRead.mutate([n.id]);
+                            }}
+                            className="text-primary mt-1 inline-block text-xs hover:underline"
+                          >
+                            查看详情 →
+                          </Link>
+                        ))}
                     </div>
                   )}
                   {!systemPayload && n.content && (

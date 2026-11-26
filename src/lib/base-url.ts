@@ -14,7 +14,9 @@ export const API_BASE = RAW_BASE.replace(/\/+$/, '');
 /** 是否跨域部署 */
 export const isCrossOrigin = API_BASE !== '';
 
-/** 把接口返回的站内相对路径（/api/files/... 等）转成可访问地址 */
+/** 把接口返回的站内相对路径（/api/files/... 等）转成可访问地址。
+ *  `//host/x` 不拼基址（保持原样）：新写入的数据已由后端 imageUrlSchema 拒绝协议相对地址，
+ *  这里只为兼容历史数据，避免把 `//host/x` 错拼成 `https://api//host/x`。 */
 export function assetUrl(path: string | null | undefined): string | undefined {
   if (!path) return undefined;
   if (!path.startsWith('/') || path.startsWith('//')) return path;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
@@ -39,20 +39,28 @@ export function ServicesTab() {
     queryFn: () => api<{ site: typeof site }>('/api/admin/services/site'),
   });
 
-  // 邮件账号池初始化
+  // 邮件账号池初始化。数据是异步到达的，必须在 effect 里同步：
+  // 历史实现在 useState 初始化器里 setState —— 初始化器只跑一次（此时 query 还没返回），
+  // 结果账号池永远为空，管理员新增一个账号保存后会把原有账号整池覆盖（数据丢失）。
   const services = data?.services ?? [];
   const mailSvc = services.find((s) => s.key === 'mail');
-  useState(() => {
-    if (mailSvc?.accounts && mailAccounts.length === 0 && mailSvc.accounts.length > 0) {
-      setMailAccounts(mailSvc.accounts.filter((a) => a.source !== 'env').map(() => ({ api_key: '', from: '' })));
-    }
-    return null;
-  });
-  useState(() => {
-    if (setupData?.setup && setup.registration_enabled === undefined) setSetup(setupData.setup);
-    if (siteData?.site && site.site_name === undefined) setSite(siteData.site);
-    return null;
-  });
+  const mailInit = useRef(false);
+  useEffect(() => {
+    if (!mailSvc || mailInit.current) return;
+    mailInit.current = true;
+    const kvAccounts = (mailSvc.accounts ?? []).filter((a) => a.source !== 'env');
+    setMailAccounts(kvAccounts.map((a) => ({ api_key: '', from: a.from })));
+  }, [mailSvc]);
+
+  // 初始化配置 / 站点信息：同样等数据到达后再回填。
+  // 历史实现同样写在 useState 初始化器里 → setup 永远是 {}，
+  // 「开放注册」显示默认 true，管理员一保存就把已关闭的注册重新打开。
+  useEffect(() => {
+    if (setupData?.setup) setSetup(setupData.setup);
+  }, [setupData]);
+  useEffect(() => {
+    if (siteData?.site) setSite(siteData.site);
+  }, [siteData]);
 
   const saveMut = useMutation({
     mutationFn: ({ key, body }: { key: string; body: unknown }) =>
@@ -244,7 +252,8 @@ export function ServicesTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button size="sm" disabled={setupMut.isPending} onClick={() => setupMut.mutate()}>保存</Button>
+        {/* 数据未到达前禁止保存：否则会用默认值覆盖真实配置（例如把已关闭的注册重新打开） */}
+        <Button size="sm" disabled={setupMut.isPending || !setupData} onClick={() => setupMut.mutate()}>保存</Button>
       </div>
 
       {/* 站点信息 */}
@@ -268,7 +277,7 @@ export function ServicesTab() {
             )}
           </div>
         ))}
-        <Button size="sm" disabled={siteMut.isPending} onClick={() => siteMut.mutate()}>保存</Button>
+        <Button size="sm" disabled={siteMut.isPending || !siteData} onClick={() => siteMut.mutate()}>保存</Button>
       </div>
     </div>
   );

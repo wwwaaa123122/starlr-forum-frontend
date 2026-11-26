@@ -18,7 +18,7 @@ npm run dev          # Vite @ :5173（API 代理 :8787）
 npm run build        # tsc -b && vite build → dist/（本地 dev 用）
 npm run build:frontend   # → dist-f/（部署产物，同域模式：不设 VITE_API_BASE）
 npm run typecheck
-npm test             # vitest（91 用例）
+npm test             # vitest（103 用例）
 ```
 
 ## 代码地图
@@ -31,6 +31,8 @@ src/
   lib/use-page-title.ts  # usePageTitle（`页面 · 站点名`）+ ScrollToTop
   lib/image-compress.ts   # 上传压缩的最初实现（X 前端同款逻辑）
   lib/consent.ts     # Cookie 同意 + Umami 统计
+  public/app-auth.js # Android 登录桥接页脚本（CSP 要求外置）
+  public/theme-init.js # 首屏主题初始化（CSP 要求外置）
   components/layout/page.tsx      # PageContainer / PageHeader / PageSection / PageMessage（全站页面骨架）
   components/layout/auth-shell.tsx# 登录注册类页面外壳
   components/ui/list-skeleton.tsx # 列表骨架屏
@@ -59,6 +61,8 @@ src/
 
 ## 改动注意
 
+- **CSP 禁止内联脚本**：`public/_headers` 的 `script-src` 没有 `'unsafe-inline'`，任何内联 `<script>` / `on*` 属性都会被浏览器拦截（曾导致 `app-auth.html` 桥接页与主题初始化在生产失效）。脚本一律放 `public/*.js` 外置引用；`src/lib/csp-inline.test.ts` 是守门测试。
+
 - 后端加字段/改行为时，本目录**不强制跟进**；但若改了共享 API 语义，检查这里会不会编译报错（`npm run typecheck`）。
 - `api.ts` 的 401 刷新与 X 前端逻辑同源；若在后端改了刷新接口形状，两处都要过一遍。
 - 文案中文、图片相对路径等约定与 X 前端一致。
@@ -72,11 +76,12 @@ src/
 
 ## 测试与 CI（2026-11-21 起）
 
-- **命令**：`npm test`（vitest，jsdom 环境，**91 用例 / 11 文件**）、CI 四门禁 = typecheck + eslint + test + build。
+- **命令**：`npm test`（vitest，jsdom 环境，**103 用例 / 14 文件**）、CI 四门禁 = typecheck + eslint + test + build。
 - **测试清单**：
   - `lib/api.test.ts`：401 刷新重试 / NO_RETRY_CODES / 刷新失败不重试 / 并发单飞 / 错误解析
   - `lib/auth.test.tsx`：初始化态、角色映射、登出清理（含后端失败）、401→刷新→重试集成、重放清空、jwtExp
-  - `lib/utils.test.ts`、`lib/consent.test.ts`、`lib/image-compress.test.ts`、`lib/base-url.test.ts`、`lib/site-config.test.tsx`、`lib/use-page-title.test.tsx`
+  - `lib/utils.test.ts`、`lib/consent.test.ts`、`lib/image-compress.test.ts`、`lib/base-url.test.ts`、`lib/site-config.test.tsx`、`lib/use-page-title.test.tsx`、`lib/csp-inline.test.ts`
+  - `pages/verify-email.test.tsx`（未验证横幅 Hooks 顺序回归）、`pages/register.test.tsx`（同意条款 checkbox）
   - `pages/AdminSmoke.test.tsx` + `pages/admin/AdminTabs*.test.tsx`：权限路由 + 14 个 Tab 冒烟
     （接口返回 `{}` 最严苛形状，防整树崩溃；ReportsTab 兼作历史修复的回归哨兵）
 - **已知踩坑**（写组件时预防，写测试时参考）：

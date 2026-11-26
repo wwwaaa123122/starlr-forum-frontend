@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Search as SearchIcon } from 'lucide-react';
@@ -23,8 +23,11 @@ export function SearchPage() {
   const type = (searchParams.get('type') ?? 'post') as 'post' | 'user';
   const sort = (searchParams.get('sort') ?? 'relevant') as 'relevant' | 'new' | 'hot';
   const category = searchParams.get('category') ?? '';
-  const page = Number(searchParams.get('page') ?? '1');
+  const pageRaw = Number.parseInt(searchParams.get('page') ?? '1', 10);
+  const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? pageRaw : 1;
   const [input, setInput] = useState(q);
+  // 从顶栏搜索框跳转过来时 URL 里的 q 会变，输入框要跟着同步（否则显示上一次的关键词）
+  useEffect(() => setInput(q), [q]);
   usePageTitle(q ? `搜索「${q}」` : '搜索');
 
   // 分类筛选数据：后端 /api/search 一直支持 category，此前前端没有入口

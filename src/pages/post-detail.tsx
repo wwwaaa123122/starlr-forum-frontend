@@ -132,7 +132,9 @@ function ReplyItem({
     }
   };
 
-  const canEdit = user && (user.id === reply.authorId || isModerator);
+  // 只有作者本人能编辑：后端 PATCH /api/replies/:id 对版主也返回 403，
+  // 历史上这里把版主也算进 canEdit，点了「编辑」保存必定失败。
+  const canEdit = Boolean(user && user.id === reply.authorId);
 
   return (
     <div className="border-b px-4 py-4 last:border-b-0">
@@ -195,6 +197,8 @@ function ReplyItem({
               variant="ghost"
               size="sm"
               className="h-7 shrink-0 gap-1 px-2"
+              aria-pressed={Boolean(reply.liked)}
+              aria-label={reply.liked ? '取消点赞这条回复' : '点赞这条回复'}
               onClick={() => replyLikeMutation.mutate()}
             >
               <Heart className={`size-3.5 ${reply.liked ? 'fill-current text-destructive' : ''}`} />
@@ -496,6 +500,8 @@ export function PostDetailPage() {
             size="sm"
             onClick={() => likeMutation.mutate()}
             disabled={!user || likeMutation.isPending}
+            title={user ? undefined : '登录后可点赞'}
+            aria-pressed={Boolean(post.liked)}
           >
             <Heart className={`size-4 ${post.liked ? 'fill-current' : ''}`} /> 点赞 {formatNumber(post.likeCount)}
           </Button>
@@ -504,6 +510,8 @@ export function PostDetailPage() {
             size="sm"
             onClick={() => favoriteMutation.mutate()}
             disabled={!user || favoriteMutation.isPending}
+            title={user ? undefined : '登录后可收藏'}
+            aria-pressed={Boolean(post.favorited)}
           >
             <Star className={`size-4 ${post.favorited ? 'fill-current' : ''}`} /> 收藏 {formatNumber(post.favoriteCount)}
           </Button>

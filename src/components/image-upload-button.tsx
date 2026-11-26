@@ -56,7 +56,12 @@ export function ImageUploadButton({
       form.append('purpose', purpose);
       // 大图（最大 5MB）在弱网下 30s 默认超时不够，放宽到 120s
       const res = await api<UploadResponse>('/api/upload', { method: 'POST', body: form, timeoutMs: 120_000 });
-      const alt = file.name.replace(/\.[a-z0-9]+$/i, '').slice(0, 30) || '图片';
+      // alt 会进入 Markdown 的 ![]()：方括号/圆括号/换行会破坏语法，先剔除
+      const alt = file.name
+        .replace(/\.[a-z0-9]+$/i, '')
+        .replace(/[[\]()\r\n]/g, '')
+        .trim()
+        .slice(0, 30) || '图片';
       insertMarkdown(`![${alt}](${res.url})`);
       if (compressed) {
         toast.success(`已自动压缩：${formatSize(originalSize)} → ${formatSize(file.size)}`);

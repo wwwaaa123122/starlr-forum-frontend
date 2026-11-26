@@ -161,7 +161,7 @@ export function SiteHeader() {
           <SheetContent side="left" className="w-72">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
-                <img src="/icon-192.png" alt="Starlr" className="size-6" /> {siteName}
+                <img src="/icon-192.png" alt={siteName} className="size-6" /> {siteName}
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-1 px-4" onClick={() => setMobileOpen(false)}>
@@ -176,7 +176,7 @@ export function SiteHeader() {
         </Sheet>
 
         <Link to="/" className="flex shrink-0 items-center gap-2 font-bold">
-          <img src="/icon-192.png" alt="Starlr" className="size-6" />
+          <img src="/icon-192.png" alt={siteName} className="size-6" />
           <span className="hidden max-w-40 truncate sm:inline">{siteName}</span>
           <span className="sm:hidden">Starlr</span>
         </Link>
@@ -187,7 +187,7 @@ export function SiteHeader() {
         <div className="flex-1" />
 
         {/* 搜索 */}
-        <form onSubmit={handleSearch} className="relative hidden w-56 sm:block md:w-72">
+        <form onSubmit={handleSearch} role="search" className="relative hidden w-56 sm:block md:w-72">
           <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input
             value={search}

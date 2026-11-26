@@ -37,6 +37,8 @@ export function UserPage() {
   const [postPage, setPostPage] = useState(1);
   const [replyPage, setReplyPage] = useState(1);
   const [likesPage, setLikesPage] = useState(1);
+  // 按当前 Tab 懒加载：此前三个列表在进页面时同时请求（3 次 D1 查询 + 一次注定 403 的 likes）
+  const [tab, setTab] = useState<'posts' | 'replies' | 'likes'>('posts');
 
   const { data, isLoading } = useQuery({
     queryKey: ['user', username],
@@ -51,7 +53,7 @@ export function UserPage() {
       api<{ posts: PostSummary[]; pagination: Pagination }>(
         `/api/users/${encodeURIComponent(username)}/posts?page=${postPage}&pageSize=20`,
       ),
-    enabled: Boolean(username),
+    enabled: Boolean(username) && tab === 'posts',
   });
 
   const { data: repliesData } = useQuery({
@@ -60,7 +62,7 @@ export function UserPage() {
       api<{ replies: UserReply[]; pagination: Pagination }>(
         `/api/users/${encodeURIComponent(username)}/replies?page=${replyPage}&pageSize=20`,
       ),
-    enabled: Boolean(username),
+    enabled: Boolean(username) && tab === 'replies',
   });
 
   // 注意：所有 hooks 必须在任何提前 return 之前调用（React Hooks 规则）
@@ -70,7 +72,7 @@ export function UserPage() {
       api<{ posts: PostSummary[]; pagination: Pagination }>(
         `/api/users/${encodeURIComponent(username)}/likes?page=${likesPage}&pageSize=20`,
       ),
-    enabled: Boolean(username),
+    enabled: Boolean(username) && tab === 'likes',
     retry: false,
   });
   const likesForbidden = likesError instanceof ApiClientError && likesError.code === 'LIKES_PRIVATE';
@@ -105,7 +107,9 @@ export function UserPage() {
   }
 
   const isSelf = currentUser?.username === profile.username;
-  const likesVisible = isSelf || profile.likesPublic === true || !likesForbidden;
+  // 只按资料里的公开开关决定是否展示「喜欢」Tab：
+  // 历史实现用「请求没报 403」推断可见性，但请求本身是懒加载的，未加载时必然显示 → 点进去空列表
+  const likesVisible = isSelf || profile.likesPublic === true;
 
   return (
     <PageContainer>
@@ -151,7 +155,7 @@ export function UserPage() {
         </div>
       </PageSection>
 
-      <Tabs defaultValue="posts" className="mt-6">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="mt-6">
         <TabsList>
           <TabsTrigger value="posts">帖子（{formatNumber(profile.postCount)}）</TabsTrigger>
           <TabsTrigger value="replies">回复（{formatNumber(profile.replyCount)}）</TabsTrigger>
@@ -195,7 +199,9 @@ export function UserPage() {
 
         <TabsContent value="likes">
           <TabListShell>
-            {((likesData?.posts?.length ?? 0)) === 0 ? (
+            {likesForbidden ? (
+              <PageMessage title="该用户的喜欢不公开" description="对方在隐私设置里关闭了点赞列表。" />
+            ) : ((likesData?.posts?.length ?? 0)) === 0 ? (
               <PageMessage title="还没有喜欢的帖子" description={isSelf ? '在帖子下方点个赞就会出现在这里。' : undefined} />
             ) : (
               likesData!.posts.map((post) => <PostCard key={post.id} post={post} />)

@@ -57,6 +57,7 @@ export function Turnstile({ siteKey, onToken }: TurnstileProps) {
         setVisible(true);
         widgetId.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
+          language: 'zh-cn',
           theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
           callback: (token: string) => onToken(token),
           'expired-callback': () => onToken(''),

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { SiteFooter, SiteHeader } from '@/components/layout/site-header';
 import { CookieConsent } from '@/components/cookie-consent';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -14,6 +14,7 @@ const CategoriesPage = lazy(() => import('@/pages/categories').then((m) => ({ de
 const PostDetailPage = lazy(() => import('@/pages/post-detail').then((m) => ({ default: m.PostDetailPage })));
 const PostEditorPage = lazy(() => import('@/pages/post-editor').then((m) => ({ default: m.PostEditorPage })));
 const LoginPage = lazy(() => import('@/pages/login').then((m) => ({ default: m.LoginPage })));
+const AppAuthPage = lazy(() => import('@/pages/app-auth').then((m) => ({ default: m.AppAuthPage })));
 const OAuthCallback = lazy(() => import('@/pages/oauth-callback'));
 const ForgotPasswordPage = lazy(() => import('@/pages/forgot-password').then((m) => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('@/pages/reset-password').then((m) => ({ default: m.ResetPasswordPage })));
@@ -41,18 +42,23 @@ function RouteFallback() {
 
 export default function App() {
   initConsent();
+  const { pathname } = useLocation();
+  // Android 登录桥接页是独立全屏页面，不挂站点顶栏/页脚/Cookie 横幅
+  const bare = pathname.replace(/\/+$/, '') === '/app-auth';
   return (
     <div className="flex min-h-dvh flex-col">
       <ScrollToTop />
       {/* 键盘用户第一个 Tab 即可跳过导航直达正文，与全站统一焦点样式配套 */}
-      <a
-        href="#main"
-        className="bg-primary text-primary-foreground sr-only rounded-none px-3 py-2 text-sm focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
-      >
-        跳到主要内容
-      </a>
-      <SiteHeader />
-      <UnverifiedBanner />
+      {!bare && (
+        <a
+          href="#main"
+          className="bg-primary text-primary-foreground sr-only rounded-none px-3 py-2 text-sm focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+        >
+          跳到主要内容
+        </a>
+      )}
+      {!bare && <SiteHeader />}
+      {!bare && <UnverifiedBanner />}
       <main id="main" className="flex-1">
         <ErrorBoundary>
         <Suspense fallback={<RouteFallback />}>
@@ -70,6 +76,7 @@ export default function App() {
           <Route path="/me/likes" element={<MyLikesPage />} />
           <Route path="/me/favorites" element={<MyFavoritesPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/app-auth" element={<AppAuthPage />} />
           <Route path="/auth/github/done" element={<OAuthCallback />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -84,8 +91,8 @@ export default function App() {
         </Suspense>
         </ErrorBoundary>
       </main>
-      <SiteFooter />
-      <CookieConsent />
+      {!bare && <SiteFooter />}
+      {!bare && <CookieConsent />}
     </div>
   );
 }

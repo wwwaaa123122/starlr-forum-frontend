@@ -1,64 +1,205 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
-  <title>应用登录</title>
+  <meta name="theme-color" content="#000000">
+  <title>应用登录 · Starlr</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --sl-canvas: #000000;
+      --sl-surface: #16181c;
+      --sl-surface2: #202327;
+      --sl-line: #2f3336;
+      --sl-line-strong: #536471;
+      --sl-ink: #e7e9ea;
+      --sl-muted: #71767b;
+      --sl-faint: #536471;
+      --sl-brand: #1d9bf0;
+      --sl-brand-hover: #1a8cd8;
+      --sl-brand-soft: rgba(29, 155, 240, 0.14);
+      --sl-danger: #f4212e;
+    }
+    [data-theme="light"] {
+      color-scheme: light;
+      --sl-canvas: #ffffff;
+      --sl-surface: #f7f9f9;
+      --sl-surface2: #eff3f4;
+      --sl-line: #eff3f4;
+      --sl-line-strong: #cfd9de;
+      --sl-ink: #0f1419;
+      --sl-muted: #536471;
+      --sl-faint: #8b98a5;
+      --sl-brand-soft: rgba(29, 155, 240, 0.1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: #090c1f; color: #e7e9ee; min-height: 100vh;
-      display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 16px calc(28px + env(safe-area-inset-bottom));
+      background: var(--sl-canvas);
+      color: var(--sl-ink);
+      font-family: 'Inter', 'HarmonyOS Sans SC', 'MiSans', -apple-system, BlinkMacSystemFont,
+        'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
-    .card { width: 100%; max-width: 360px; }
-    h1 { font-size: 20px; text-align: center; margin-bottom: 4px; }
-    .sub { font-size: 13px; color: #8b93a7; text-align: center; margin-bottom: 20px; }
-    label { display: block; font-size: 13px; color: #8b93a7; margin: 12px 0 6px; }
+    .card { width: 100%; max-width: 400px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .brand img { width: 44px; height: 44px; border-radius: 25%; }
+    .brand .name { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+    .sub {
+      margin: 0 0 24px;
+      color: var(--sl-muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    label {
+      display: block;
+      margin: 0 0 6px;
+      color: var(--sl-muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
     input {
-      width: 100%; padding: 11px 12px; border-radius: 10px; font-size: 15px;
-      border: 1px solid #2a3050; background: #11142a; color: #e7e9ee; outline: none;
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid var(--sl-line);
+      border-radius: 12px;
+      outline: none;
+      background: var(--sl-surface);
+      color: var(--sl-ink);
+      font-family: inherit;
+      font-size: 15px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    input:focus { border-color: #1d9bf0; }
-    button {
-      width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 999px;
-      font-size: 15px; font-weight: 700; background: #1d9bf0; color: #fff; cursor: pointer;
+    input::placeholder { color: var(--sl-faint); }
+    input:focus {
+      border-color: var(--sl-brand);
+      box-shadow: 0 0 0 3px var(--sl-brand-soft);
     }
-    button:disabled { opacity: .55; }
-    #cf-widget { margin-top: 16px; display: flex; justify-content: center; min-height: 0; }
-    #msg { margin-top: 14px; font-size: 13px; line-height: 1.6; text-align: center; color: #8b93a7; white-space: pre-wrap; word-break: break-all; }
-    #msg.err { color: #ff6b6b; }
-    #back { display: none; margin-top: 14px; text-align: center; }
-    #back a { display: inline-block; padding: 10px 22px; border-radius: 999px; background: #1d2a3f; color: #4db2ff; text-decoration: none; font-size: 14px; font-weight: 700; }
-    .switch { margin-top: 14px; text-align: center; font-size: 13px; }
-    .switch a { color: #1d9bf0; text-decoration: none; font-weight: 600; }
+    .field { margin-bottom: 16px; }
+    button.primary {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--sl-brand);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    button.primary:hover { background: var(--sl-brand-hover); }
+    button.primary:active { transform: scale(0.985); }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    #cf-widget {
+      display: flex;
+      justify-content: center;
+      min-height: 0;
+      margin: 18px 0 0;
+    }
+    #msg {
+      margin: 16px 0 0;
+      color: var(--sl-muted);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #msg.err { color: var(--sl-danger); }
+    .switch {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .switch a {
+      color: var(--sl-brand);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .switch a:hover { text-decoration: underline; }
+    #back { display: none; margin-top: 18px; text-align: center; }
+    #back a {
+      display: inline-block;
+      padding: 11px 24px;
+      border-radius: 999px;
+      background: var(--sl-surface2);
+      color: var(--sl-ink);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .foot {
+      margin: 26px 0 0;
+      color: var(--sl-faint);
+      font-size: 12px;
+      text-align: center;
+    }
+    @media (max-width: 380px) {
+      body { padding-left: 12px; padding-right: 12px; }
+      h1 { font-size: 23px; }
+    }
   </style>
+  <!-- 外置脚本：站点 CSP 的 script-src 不含 unsafe-inline，内联脚本会被浏览器拦截 -->
+  <script src="/app-auth.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h1>应用登录</h1>
-    <p class="sub">在浏览器完成登录后自动返回应用</p>
-
-    <div id="form-box">
-      <label id="l-id" for="identifier">用户名或邮箱</label>
-      <input id="identifier" autocomplete="username">
-      <label id="l-email" for="email" style="display:none">邮箱</label>
-      <input id="email" style="display:none" autocomplete="email">
-      <label for="password">密码</label>
-      <input id="password" type="password" autocomplete="current-password">
-      <label id="l-nick" for="nickname" style="display:none">昵称（可选）</label>
-      <input id="nickname" style="display:none" autocomplete="nickname">
-      <div id="cf-widget"></div>
-      <button id="go">登录</button>
-      <div class="switch"><a id="switch" href="?">注册新账号</a></div>
+  <main class="card">
+    <div class="brand">
+      <img src="/icon-192.png" alt="Starlr">
+      <span class="name" id="site-name">Starlr</span>
     </div>
 
+    <h1>应用登录</h1>
+    <p class="sub" id="sub">在浏览器完成登录后自动返回应用</p>
+
+    <form id="form-box" novalidate>
+      <div class="field" id="f-id">
+        <label for="identifier">用户名或邮箱</label>
+        <input id="identifier" autocomplete="username" placeholder="用户名或邮箱">
+      </div>
+      <div class="field" id="f-email" style="display:none">
+        <label for="email">邮箱</label>
+        <input id="email" type="email" autocomplete="email" placeholder="邮箱">
+      </div>
+      <div class="field" id="f-nick" style="display:none">
+        <label for="nickname">昵称（可选）</label>
+        <input id="nickname" autocomplete="nickname" placeholder="昵称">
+      </div>
+      <div class="field">
+        <label for="password">密码</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="8 位以上">
+      </div>
+      <div id="cf-widget"></div>
+      <button id="go" class="primary" type="submit">登录</button>
+    </form>
+
+    <div class="switch"><a id="switch" href="?mode=register">注册新账号</a></div>
     <div id="back"><a id="back-link" href="#">返回应用</a></div>
     <p id="msg">正在加载…</p>
-  </div>
-
-  <!-- 外置脚本：_headers 里的 CSP 禁止内联脚本（script-src 无 unsafe-inline），内联会被浏览器直接拦截 -->
-  <script src="/app-auth.js"></script>
+    <p class="foot" id="foot">Starlr · Cloudflare</p>
+  </main>
 </body>
 </html>

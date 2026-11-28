@@ -62,6 +62,9 @@
 
     // 模式切换 UI
     if (mode === 'register') {
+      var pageTitle = document.querySelector('h1');
+      if (pageTitle) pageTitle.textContent = '应用注册';
+      document.title = '应用注册 · Starlr';
       el('sub').textContent = '注册完成后自动返回应用';
       el('f-email').style.display = '';
       el('f-nick').style.display = '';
@@ -251,7 +254,7 @@
         if (cfg.siteName) {
           el('site-name').textContent = cfg.siteName;
           el('foot').textContent = cfg.siteName + ' · Cloudflare';
-          document.title = '应用登录 · ' + cfg.siteName;
+          document.title = (mode === 'register' ? '应用注册' : '应用登录') + ' · ' + cfg.siteName;
         }
         if (!siteKey) {
           updateButton();

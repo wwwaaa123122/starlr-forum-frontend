@@ -141,7 +141,6 @@ export function AppAuthPage() {
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkingSession]);
 
   const fail = (err: unknown) => {

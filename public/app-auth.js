@@ -97,7 +97,7 @@ goBtn.addEventListener('click', function () {
   if (mode === 'login') {
     say('正在登录…');
     post('/api/auth/login', { identifier: identifier, password: password, turnstileToken: turnstileToken })
-      .then(function (j) { return afterLogin(j.token); })
+      .then(function (j) { return afterLogin(j.accessToken || j.token); })
       .catch(function (e) { fail('登录失败：' + e.message); });
   } else {
     var email = el('email').value.trim();
@@ -108,7 +108,7 @@ goBtn.addEventListener('click', function () {
       username: identifier, email: email, password: password,
       nickname: nickname || undefined, turnstileToken: turnstileToken,
     })
-      .then(function (j) { return afterLogin(j.token); })
+      .then(function (j) { return afterLogin(j.accessToken || j.token); })
       .catch(function (e) { fail('注册失败：' + e.message); });
   }
 });

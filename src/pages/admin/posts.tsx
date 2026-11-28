@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { RotateCcw, Trash2 } from 'lucide-react';
+import { RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,10 @@ export function PostsTab() {
   const [status, setStatus] = useState('normal');
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'posts', status, page],
     queryFn: () =>
-      api<{ posts: AdminPost[]; pagination: Pagination }>(
+      api<{ posts: AdminPost[]; pagination: Pagination; moderatorScope?: string[] | null }>(
         `/api/admin/posts?page=${page}&pageSize=30&status=${status}`,
       ),
   });
@@ -56,22 +56,27 @@ export function PostsTab() {
 
   return (
     <div className="space-y-3">
-      <Select
-        value={status}
-        onValueChange={(v) => {
-          setStatus(v);
-          setPage(1);
-        }}
-      >
-        <SelectTrigger size="sm" className="w-32">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="normal">正常帖子</SelectItem>
-          <SelectItem value="deleted">已删除</SelectItem>
-          <SelectItem value="all">全部</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger size="sm" className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="normal">正常帖子</SelectItem>
+            <SelectItem value="deleted">已删除</SelectItem>
+            <SelectItem value="all">全部</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isLoading}>
+          <RefreshCw className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} /> 刷新
+        </Button>
+      </div>
 
       <div className="surface">
         <Table className="min-w-160">
@@ -89,6 +94,29 @@ export function PostsTab() {
               <TableRow>
                 <TableCell colSpan={5}>
                   <Skeleton className="my-2 h-8" />
+                </TableCell>
+              </TableRow>
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <div className="flex flex-col items-center gap-2 py-8 text-center">
+                    <p className="text-destructive text-sm">{errMsg(error)}</p>
+                    <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                      重试
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (data?.posts ?? []).length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <div className="text-muted-foreground py-10 text-center text-sm">
+                    {data?.moderatorScope && data.moderatorScope.length === 0
+                      ? '当前账号还没有分配版块，请联系管理员'
+                      : status === 'deleted'
+                        ? '暂无已删除帖子'
+                        : '暂无帖子'}
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (

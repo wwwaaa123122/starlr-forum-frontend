@@ -12,6 +12,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { ApiClientError, api } from '@/lib/api';
 import { useSiteConfig } from '@/lib/site-config';
 import { usePageTitle } from '@/lib/use-page-title';
@@ -35,6 +36,36 @@ function randomHex(bytes: number): string {
   return [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * 复用当前网页（starlr.tech 第一方）的登录状态：
+ * 读取 xc.access / xc.refresh → 校验 /api/me → 必要时续期 → 返回可用的 access token。
+ * 这样已登录网页的用户打开桥接页时无需再输一次账号密码。
+ */
+async function readWebSession(): Promise<{ access: string } | null> {
+  const access = localStorage.getItem('xc.access');
+  const refresh = localStorage.getItem('xc.refresh');
+  if (!access && !refresh) return null;
+  let token = access || '';
+  let me = token ? await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } }).catch(() => null) : null;
+  if ((!me || !me.ok) && refresh) {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: refresh }),
+    }).catch(() => null);
+    if (res && res.ok) {
+      const tokens = (await res.json().catch(() => null)) as { accessToken?: string; refreshToken?: string } | null;
+      if (tokens?.accessToken) {
+        token = tokens.accessToken;
+        localStorage.setItem('xc.access', token);
+        if (tokens.refreshToken) localStorage.setItem('xc.refresh', tokens.refreshToken);
+        me = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+      }
+    }
+  }
+  return me && me.ok && token ? { access: token } : null;
+}
+
 export function AppAuthPage() {
   const [params] = useSearchParams();
   const mode = params.get('mode') === 'register' ? 'register' : 'login';
@@ -52,8 +83,12 @@ export function AppAuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ appUrl: string } | null>(null);
+  // 已登录网页时自动复用登录态；注册/preauth/显式 switch=1 时直接走表单
+  const [checkingSession, setCheckingSession] = useState(
+    !preauth && mode !== 'register' && params.get('switch') !== '1',
+  );
 
-  const title = done ? '正在返回应用' : preauth ? '安全验证' : mode === 'register' ? '应用注册' : '应用登录';
+  const title = done || checkingSession ? '正在返回应用' : preauth ? '安全验证' : mode === 'register' ? '应用注册' : '应用登录';
   usePageTitle(title);
 
   useEffect(() => {
@@ -77,6 +112,37 @@ export function AppAuthPage() {
     // Chrome 需 intent:// 协议从网页拉起应用；同时保留手动按钮兜底
     window.setTimeout(() => window.location.replace(intentUrl), 300);
   };
+
+  useEffect(() => {
+    if (!checkingSession) return;
+    let alive = true;
+    void (async () => {
+      const session = await readWebSession();
+      if (!alive) return;
+      if (!session) {
+        setCheckingSession(false);
+        return;
+      }
+      try {
+        const challenge = randomHex(16);
+        const issued = await api<TicketResponse>('/api/auth/site-login/issue', {
+          method: 'POST',
+          body: { origin: window.location.origin, challenge },
+          token: session.access,
+          retryOn401: false,
+        });
+        if (!alive) return;
+        if (!issued.ticket) throw new Error('服务器未返回登录凭证');
+        returnToApp(issued.ticket, challenge);
+      } catch {
+        if (alive) setCheckingSession(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkingSession]);
 
   const fail = (err: unknown) => {
     const message = err instanceof ApiClientError ? err.message : '操作失败，请稍后重试';
@@ -159,6 +225,18 @@ export function AppAuthPage() {
         <Button asChild className="w-full">
           <a href={done.appUrl}>返回应用</a>
         </Button>
+      </AuthShell>
+    );
+  }
+
+  if (checkingSession) {
+    return (
+      <AuthShell
+        icon={<Loader2 className="text-primary size-6 animate-spin" />}
+        title="正在读取登录状态"
+        description="如果网页已登录，将自动返回应用…"
+      >
+        <p className="text-muted-foreground text-center text-sm">正在检查网页登录状态…</p>
       </AuthShell>
     );
   }

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Ban, Eye, FileText, Flag, Link, TrendingUp, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Ban, Eye, FileText, Flag, TrendingUp, Users } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatNumber } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';

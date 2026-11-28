@@ -21,6 +21,19 @@ export default defineConfig([
       },
     },
     rules: {
+      // lucide-react 也有一个 Link 图标；误当路由 Link 用会导致 <Link to> 只渲染图标、标题消失
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "lucide-react",
+              importNames: ["Link"],
+              message: "路由 Link 请从 react-router-dom 导入；lucide-react 的 Link 是图标。",
+            },
+          ],
+        },
+      ],
       "react-hooks/exhaustive-deps": "warn",
       "shadcn/no-restyle": [
         "error",
